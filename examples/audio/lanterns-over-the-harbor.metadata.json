@@ -1,0 +1,8 @@
+{
+  "prompt": "Compose an original, emotionally compelling instrumental piece that feels like a complete musical journey rather than a loop or a technical demo. Aim for memorable melodic writing, expressive harmony, rhythmic movement, and an arrangement with a clear opening, development, a contrasting lift, a satisfying climax, and a resolved ending. Give every instrument a musical purpose. Use as many or as few tracks as the piece needs; choose the instruments, style, meter, tempo, motifs, and dynamics yourself. Make it sound coherent and listenable as a standalone song, with tasteful variation rather than mechanical repetition. The final audio should be exactly 60 seconds.",
+  "model": "anthropic/claude-opus-5.5",
+  "thinking": "xhigh",
+  "inputTokens": 1688,
+  "outputTokens": 26241,
+  "generationSeconds": 258
+}
