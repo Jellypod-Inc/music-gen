@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "description": "Generate instrumental scores, MIDI, and WAV with an AI SDK model or an interactive agent skill",
   "type": "module",
-  "license": "MIT",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jellypod-Inc/music-gen-instrumental.git"
+  },
   "engines": { "node": ">=20" },
   "bin": { "music-gen-instrumental": "./bin/music-gen-instrumental.mjs" },
   "exports": {
@@ -22,6 +26,7 @@
     "skills",
     "examples",
     "README.md",
+    "NOTICE",
     "LICENSE"
   ],
   "scripts": {

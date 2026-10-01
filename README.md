@@ -200,7 +200,7 @@ Run `npm run check`. The offline tests use AI SDK's mock language model, parse t
 
 To test this checkout live through AI Gateway, set `AI_GATEWAY_API_KEY` in your shell, then run `npm run test:live`. This uses the compact format through the installed AI SDK's Gateway provider, defaults to `anthropic/claude-sonnet-5.5`, and saves both files, the expanded project, metadata, and an opt-in trace in the ignored `out/` directory. Override the model with `MUSIC_MODEL_ID`, reasoning with `MUSIC_REASONING=none|low|medium|high|xhigh` when supported, prompt with `MUSIC_PROMPT`, and output subdirectory with `MUSIC_RUN_NAME`. A live call incurs provider charges. Do not commit or paste the key. For direct Anthropic access instead, install `@ai-sdk/anthropic`, set `ANTHROPIC_API_KEY`, and pass `anthropic(modelId)` as the model in your own caller.
 
-This package is MIT licensed. No external sound assets or reference-repository code are included. Direct runtime dependencies are AI SDK (Apache-2.0), Zod (MIT), and the independent MIDI parser `midi-file` (MIT). Installed transitive packages were checked; they use Apache-2.0, MIT, or `json-schema`'s AFL-2.1/BSD-3-Clause dual license. The referenced music repositories informed the conceptual design only.
+This package is licensed under [Apache 2.0](LICENSE); its copyright attribution is in [NOTICE](NOTICE). No external sound assets or reference-repository code are included. Direct runtime dependencies are AI SDK (Apache-2.0), Zod (MIT), and the independent MIDI parser `midi-file` (MIT). Installed transitive packages were checked; they use Apache-2.0, MIT, or `json-schema`'s AFL-2.1/BSD-3-Clause dual license. The referenced music repositories informed the conceptual design only.
 
 ## In-repo evals
 
