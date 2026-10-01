@@ -1,0 +1,31 @@
+test/music.test.ts
+  s_fcc69843803ae0::t_4c05bd7387c761 212-219,222,224-225,227-228,230-232,234-235
+  s_fcc69843803ae0::t_1628db589acb5a 220-221,223,226,229,233
+  s_fcc69843803ae0::t_e25caf6f046211 236-242
+  s_fcc69843803ae0::t_d2a757615d1e8e 243
+README.md
+  s_fcc69843803ae0::t_071b2942550b85 83,85,88-90,92,94,99-103,107,110,125,130
+  s_fcc69843803ae0::t_18f35ffb8beb28 126
+  s_fcc69843803ae0::t_6efc1943176723 68-69,79,84,86-87,91,93,95-98,104-106,108-109,111
+src/index.ts
+  s_fcc69843803ae0::t_18f35ffb8beb28 50,113,188,190,217
+  s_fcc69843803ae0::t_1b8492fef1008c 24-25,27,48,112,189,193-195,199,215
+  s_fcc69843803ae0::t_642c5bed8df15d 26,28,53,89-91,104,106,108-109,114,120,131-133,187,191-192,197-198,200-203,224,226-228,233
+  s_fcc69843803ae0::t_1628db589acb5a 186,196
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d1316ec406be55a142373cae71b5fa4e8d00ede2",
+  "prompts": {},
+  "sessions": {
+    "s_fcc69843803ae0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f451-5622-76e1-9321-8cd8ff5a1694",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pierson Marks <pierson@jellypod.ai>"
+    }
+  }
+}
