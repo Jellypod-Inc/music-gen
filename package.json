@@ -6,10 +6,10 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Jellypod-Inc/music-gen-instrumental.git"
+    "url": "git+https://github.com/Jellypod-Inc/music-gen.git"
   },
   "engines": { "node": ">=20" },
-  "bin": { "music-gen-instrumental": "./bin/music-gen-instrumental.mjs" },
+  "bin": { "music-gen-instrumental": "bin/music-gen-instrumental.mjs" },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

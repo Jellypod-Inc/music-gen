@@ -1,13 +1,15 @@
 # @jellypod/music-gen
 
-Generate instrumental music as a score, MIDI, and WAV. Bring an AI SDK model for composition; use the built-in synth or your own renderer. A bundled skill also lets Claude Code or Codex compose with your existing agent session.
+Generate instrumental music with AI.
+The [Jellypod](https://jellypod.com) music-gen harness lets LLMs write compact scores, converts them to MIDI, and renders WAV audio with the built-in synth or a renderer such as FluidSynth with a SoundFont.
+The package lets you choose a model, reasoning level, and length. It uses the Vercel AI SDK for model switching and includes a skill for Claude Code or Codex to compose with your existing agent session.
 
 ## Listen
 
 **Lanterns Over the Harbor** — two original 60-second takes from the same prompt and Claude Opus 5.5 via AI Gateway.
 
-- Extra high thinking: [▶ Play WAV](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen-instrumental@main/examples/audio/lanterns-over-the-harbor.wav) · [Download WAV](examples/audio/lanterns-over-the-harbor.wav) · [MIDI](examples/audio/lanterns-over-the-harbor.mid)
-- Low thinking: [▶ Play WAV](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen-instrumental@main/examples/audio/lanterns-over-the-harbor-low.wav) · [Download WAV](examples/audio/lanterns-over-the-harbor-low.wav) · [MIDI](examples/audio/lanterns-over-the-harbor-low.mid)
+- Extra high thinking: [▶ Play WAV](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen@main/examples/audio/lanterns-over-the-harbor.wav) · [Download WAV](examples/audio/lanterns-over-the-harbor.wav) · [MIDI](examples/audio/lanterns-over-the-harbor.mid)
+- Low thinking: [▶ Play WAV](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen@main/examples/audio/lanterns-over-the-harbor-low.wav) · [Download WAV](examples/audio/lanterns-over-the-harbor-low.wav) · [MIDI](examples/audio/lanterns-over-the-harbor-low.mid)
 
 Prompt used for both runs:
 
@@ -22,7 +24,7 @@ Prompt used for both runs:
 | Thinking tokens included above | 22,189 | 1,509 |
 | Generation time | 4m 18s | 35.7s |
 
-Both WAVs were rendered with FluidSynth and the [GeneralUser GS](https://www.schristiancollins.com/generaluser) SoundFont. The SoundFont is not bundled; the [author permits publishing music made with it](https://www.schristiancollins.com/generaluser). The low-thinking take used a clarified compact-score instruction after an earlier low-thinking attempt failed validation. These numbers describe the two successful runs; other generations may take different amounts of time and tokens.
+Both WAVs were rendered with FluidSynth and the [GeneralUser GS](https://www.schristiancollins.com/generaluser) SoundFont. The SoundFont is not bundled, though the [author permits publishing music made with it](https://www.schristiancollins.com/generaluser).
 
 ## Generate with the API
 
@@ -50,20 +52,34 @@ console.log(result.metadata.model.usage, result.metadata.run);
 
 The package already depends on the AI SDK. Install `ai` in your app only if you import it directly, for example to pass `gateway(...)` or another AI SDK model object.
 
+## Control the length
+
+Set `length` when you call `generateMusic`:
+
+```ts
+length: { mode: 'duration', seconds: 30 }     // exactly 30 seconds
+length: { mode: 'bars', bars: 16, bpm: 120 }   // exactly 16 bars at 120 BPM
+length: { mode: 'bars', bars: 16 }             // 16 bars; the model chooses BPM
+length: { mode: 'auto' }                       // the model chooses the length
+```
+
+If you omit `length`, it defaults to `auto` and the model determines the length from the prompt. For an exact playback time, use `duration`: a successful run returns a WAV with the requested sample count, or fails if the score cannot meet it. With `bars`, the model chooses the meter, so playback time also depends on beats per bar.
+
+To request a loop, describe it in the prompt, for example: `"A calm ambient loop whose ending leads naturally back into its opening."` Loopability is a musical choice; listen to the result to check the transition.
+
 The model chooses the tracks and instruments. The default renderer needs no sound assets or native tools. For a SoundFont, plugin host, or remote render service, pass a `MusicRenderer`; the optional `createFluidSynthRenderer` adapter is exported from `@jellypod/music-gen/renderers/fluidsynth`.
 
 To revise after listening, pass a `reviewer` callback. It receives each preview WAV and returns a feedback string or `null` to accept. The SDK sends that feedback and the previous score back to the composer. No audio judge or second model is built in.
 
 ## Use it as an agent skill
 
-With Node.js 20+ and npm, install the bundled skill from the published package:
+Install the bundled skill with the [skills CLI](https://github.com/vercel-labs/skills):
 
 ```sh
-npm exec --yes --package=@jellypod/music-gen -- music-gen-instrumental install-skill claude
-# or: replace claude with codex
+npx skills add Jellypod-Inc/music-gen
 ```
 
-Ask the agent for a piece. It writes a score and renders it locally; if the CLI is not installed, the skill runs it from npm with `npm exec`. This path uses the agent's existing session and does not need an AI Gateway key. The render command can also turn a hand-written score into MIDI and WAV without calling a model.
+The CLI detects your agent; add `-g` to install the skill for all projects. Ask the agent for a piece. It writes a score and renders it locally; if the CLI is not installed, the skill runs it from npm with `npm exec`. This path uses the agent's existing session and does not need an AI Gateway key. The render command can also turn a hand-written score into MIDI and WAV without calling a model.
 
 ## Development
 
