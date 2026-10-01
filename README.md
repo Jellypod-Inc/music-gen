@@ -1,4 +1,6 @@
-# @jellypod/music-gen
+# AI Music Gen
+
+![Retro instrumental music studio with a synthesizer, MIDI notes, and a night sky](https://raw.githubusercontent.com/Jellypod-Inc/music-gen/main/assets/retro-instrumental.png)
 
 Generate instrumental music with AI.
 The [Jellypod](https://jellypod.com) music-gen harness lets LLMs write compact scores, converts them to MIDI, and renders WAV audio with the built-in synth or a renderer such as FluidSynth with a SoundFont.
