@@ -1,0 +1,14 @@
+{
+  "pricingVersion": 1,
+  "capturedAt": "2026-09-30",
+  "unit": "USD per 1,000,000 tokens",
+  "models": {
+    "anthropic/claude-sonnet-5.5": {
+      "input": 2,
+      "output": 10,
+      "cacheRead": 0.2,
+      "cacheWrite": 2.5,
+      "source": "https://platform.claude.com/docs/en/models/sonnet-5-5/overview"
+    }
+  }
+}

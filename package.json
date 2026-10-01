@@ -1,0 +1,46 @@
+{
+  "name": "music-gen-instrumental",
+  "version": "0.1.0",
+  "description": "Generate instrumental scores, MIDI, and WAV with an AI SDK model or an interactive agent skill",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "bin": { "music-gen-instrumental": "./bin/music-gen-instrumental.mjs" },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./renderers/fluidsynth": {
+      "types": "./dist/renderers/fluidsynth.d.ts",
+      "import": "./dist/renderers/fluidsynth.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin",
+    "skills",
+    "examples",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
+    "test": "npm run build && node --import tsx --test test/*.test.ts test/*.test.mjs evals/*.test.mjs",
+    "test:live": "npm run build && node scripts/live-smoke.mjs",
+    "eval:music": "npm run build && node evals/run.mjs",
+    "check": "npm test",
+    "lint:changed": "tsc --noEmit -p tsconfig.json && for file in bin/*.mjs evals/*.mjs scripts/*.mjs examples/*.mjs; do node --check \"$file\" || exit 1; done"
+  },
+  "dependencies": {
+    "ai": "^7.0.124",
+    "midi-file": "^1.2.4",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
