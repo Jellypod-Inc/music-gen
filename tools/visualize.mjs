@@ -7,7 +7,7 @@ import { parseMidi } from 'midi-file';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const hyperframesVersion = '0.8.105';
-const colors = ['#f0c86e', '#79dbd0', '#ed88ad', '#a7a0f1', '#9cd287', '#f1a570', '#83b5f2', '#dcc293', '#cf9ddc', '#78c6ae', '#f09285', '#a5c6ed'];
+const colors = ['#e9c27e', '#83b9c4', '#d99cab', '#a9a4d7', '#a1c293', '#d8a780', '#90b3d4', '#c9b79a', '#bda1c5', '#8dbdaf', '#d5a196', '#aabdd0'];
 
 function usage() {
   return `Usage: pnpm visualize --midi song.mid [--audio song.wav] [options]
@@ -85,7 +85,7 @@ async function generationDetails(config) {
 }
 
 function run(command, args, extra = {}) {
-  const result = spawnSync(command, args, { encoding: extra.encoding ?? 'utf8', maxBuffer: 128 * 1024 * 1024, stdio: extra.stdio ?? 'pipe', cwd: extra.cwd });
+  const result = spawnSync(command, args, { encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, stdio: extra.stdio ?? 'pipe', cwd: extra.cwd });
   if (result.error) throw new Error(`${command}: ${result.error.message}`);
   if (result.status !== 0) throw new Error(`${command} exited ${result.status}: ${result.stderr || result.stdout || ''}`.trim());
   return result.stdout;
@@ -151,20 +151,6 @@ function midiNotes(bytes) {
   return { title, tracks };
 }
 
-function waveform(file, start, duration, count) {
-  const raw = run('ffmpeg', ['-v', 'error', '-ss', String(start), '-t', String(duration), '-i', file, '-ac', '1', '-ar', '8000', '-f', 'f32le', 'pipe:1'], { encoding: 'buffer' });
-  const data = Buffer.isBuffer(raw) ? raw : Buffer.from(raw);
-  const samples = Math.floor(data.length / 4);
-  const peaks = Array.from({ length: count }, (_, i) => {
-    const first = Math.floor(i * samples / count), last = Math.floor((i + 1) * samples / count);
-    let sum = 0;
-    for (let j = first; j < last; j++) { const value = data.readFloatLE(j * 4); sum += value * value; }
-    return Math.sqrt(sum / Math.max(1, last - first));
-  });
-  const reference = [...peaks].sort((a, b) => a - b)[Math.floor(count * 0.95)] || 1;
-  return peaks.map(peak => Math.max(0.08, Math.min(1, peak / reference)));
-}
-
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 }
@@ -179,16 +165,26 @@ function thinkingLabel(level) {
   return ({ xhigh: 'Extra high', low: 'Low', medium: 'Medium', high: 'High', max: 'Max', ultra: 'Ultra' })[level] ?? level;
 }
 
-function composition({ documentTitle, details, tracks, levels, start, duration, aspect }) {
+async function modelLogo(modelId) {
+  if (!modelId) return '';
+  const id = modelId.toLowerCase();
+  const provider = id.split('/')[0];
+  const logos = { anthropic: 'claude', openai: 'openai', google: 'gemini', alibaba: 'qwen', qwen: 'qwen', moonshotai: 'kimi', moonshot: 'kimi' };
+  const name = logos[provider] ?? ['claude', 'gemini', 'qwen', 'kimi', 'gpt'].find(family => id.includes(family));
+  if (!name) return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>';
+  return readFile(path.join(repo, 'tools', 'logos', `${name === 'gpt' ? 'openai' : name}.svg`), 'utf8');
+}
+
+function composition({ documentTitle, details, logo, tracks, start, duration, aspect }) {
   const vertical = aspect === 'vertical';
   const width = vertical ? 1080 : 1920, height = vertical ? 1920 : 1080;
-  const pad = vertical ? 68 : 76, labelWidth = vertical ? 212 : 225;
+  const pad = vertical ? 62 : 68, labelWidth = vertical ? 180 : 190;
   const hasPrompt = Boolean(details.prompt);
-  const rollTop = vertical ? (hasPrompt ? 620 : 310) : (hasPrompt ? 330 : 170);
-  const rollHeight = (vertical ? 1460 : 820) - rollTop;
+  const rollTop = vertical ? (hasPrompt ? 720 : 330) : (hasPrompt ? 350 : 160);
+  const rollHeight = (vertical ? 1860 : 1025) - rollTop;
   const laneHeight = rollHeight / tracks.length;
   const rollLeft = pad + labelWidth, rollWidth = width - rollLeft - pad;
-  const now = vertical ? 78 : 135;
+  const now = vertical ? 92 : 138;
   const speed = Math.max(vertical ? 165 : 190, (rollWidth - now - 25) / duration);
   const scrollTime = Math.max(0, duration - (rollWidth - now) / speed);
   const scrollPercent = (scrollTime / duration * 100).toFixed(3);
@@ -202,21 +198,22 @@ function composition({ documentTitle, details, tracks, levels, start, duration, 
     const pitches = excerptNotes.map(n => n.pitch);
     const low = Math.min(...pitches), high = Math.max(...pitches);
     const range = Math.max(7, high - low);
+    const noteHeight = Math.max(3, Math.min(14, laneHeight / 6));
+    const topInset = Math.min(i === 0 ? 32 : 14, Math.max(4, laneHeight - noteHeight - 4));
     for (const note of excerptNotes) {
       const noteStart = Math.max(0, note.start - start), noteEnd = Math.min(duration, note.end - start);
       if (noteEnd <= noteStart) continue;
       const x = now + noteStart * speed;
-      const y = i * laneHeight + 14 + (high - note.pitch) / range * Math.max(1, laneHeight - 33);
-      noteBars.push(`<div class="note" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${Math.max(4, (noteEnd - noteStart) * speed).toFixed(1)}px;height:${Math.max(5, Math.min(11, laneHeight / 7)).toFixed(1)}px;background:${color};opacity:${(0.62 + note.velocity / 127 * 0.38).toFixed(2)}"></div>`);
+      const y = i * laneHeight + topInset + (high - note.pitch) / range * Math.max(0, laneHeight - topInset - noteHeight - 4);
+      noteBars.push(`<div class="note" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${Math.max(4, (noteEnd - noteStart) * speed).toFixed(1)}px;height:${noteHeight.toFixed(1)}px;background:${color};opacity:${(0.76 + note.velocity / 127 * 0.24).toFixed(2)}"></div>`);
     }
     return `<div class="lane" style="top:${(i * laneHeight).toFixed(1)}px;height:${laneHeight.toFixed(1)}px"><span class="swatch" style="background:${color}"></span><span class="lane-name">${escapeHtml(track.name)}</span></div>`;
   });
   const grid = Array.from({ length: Math.ceil(duration) + 1 }, (_, second) => `<div class="tick" style="left:${(now + second * speed).toFixed(1)}px"><span>${String(Math.floor(start + second)).padStart(2, '0')}s</span></div>`).join('');
-  const waveBars = levels.map((level, i) => `<i style="height:${Math.round(8 + level * (vertical ? 125 : 82))}px"></i>`).join('');
-  const metric = (label, value, detail = '', wide = false) => `<div class="metric${wide ? ' wide' : ''}"><span class="metric-label">${label}</span><strong>${escapeHtml(value)}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</div>`;
+  const metric = (label, value, detail = '') => `<div class="metric"><span class="metric-label">${label}</span><strong>${escapeHtml(value)}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</div>`;
   const tokenDetail = [details.inputTokens != null ? `${details.inputTokens.toLocaleString()} in` : null, details.outputTokens != null ? `${details.outputTokens.toLocaleString()} out` : null].filter(Boolean).join('  /  ');
   const metrics = [
-    details.model ? metric('MODEL', details.model, '', true) : '',
+    details.model ? `<div class="metric wide"><span class="metric-label">MODEL</span><div class="model-value"><span class="model-icon">${logo}</span><strong>${escapeHtml(details.model)}</strong></div></div>` : '',
     details.thinking ? metric('THINKING', thinkingLabel(details.thinking)) : '',
     details.totalTokens != null ? metric('TOKENS', details.totalTokens.toLocaleString(), tokenDetail) : '',
     Number.isFinite(Number(details.generationMs)) && details.generationMs != null ? metric('GENERATION', formatTime(Number(details.generationMs) / 1000)) : '',
@@ -225,37 +222,31 @@ function composition({ documentTitle, details, tracks, levels, start, duration, 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=${width},height=${height}"><title>${escapeHtml(documentTitle)}</title>
 <style>
-  *{box-sizing:border-box}html,body{margin:0;width:${width}px;height:${height}px;overflow:hidden;background:#090d1a;color:#f7f0df;font-family:Arial,Helvetica,sans-serif}
-  #stage{position:relative;width:${width}px;height:${height}px;overflow:hidden;background:radial-gradient(circle at 80% 7%,#253448 0,#111827 39%,#090d1a 75%)}
-  #stage::before{content:"";position:absolute;inset:0;opacity:.13;background-image:linear-gradient(#69809c 1px,transparent 1px),linear-gradient(90deg,#69809c 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(transparent,black 25%,black 88%,transparent)}
-  .prompt-label{position:absolute;top:${vertical ? 64 : 38}px;left:${pad}px;color:#79dbd0;font-size:${vertical ? 22 : 19}px;font-weight:700;letter-spacing:4px}
-  .prompt{position:absolute;top:${vertical ? 105 : 71}px;left:${pad}px;right:${pad}px;max-height:${vertical ? 275 : 147}px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${vertical ? 9 : 5};font-size:${vertical ? 26 : 25}px;line-height:${vertical ? 30 : 29}px;font-weight:600;color:#f7f0df}
-  .metrics{position:absolute;top:${vertical ? (hasPrompt ? 395 : 65) : (hasPrompt ? 233 : 49)}px;left:${pad}px;right:${pad}px;display:${vertical ? 'grid' : 'flex'};${vertical ? 'grid-template-columns:1fr 1fr;' : ''}gap:${vertical ? 9 : 12}px}
-  .metric{min-width:0;min-height:${vertical ? 61 : 69}px;padding:${vertical ? '8px 14px' : '10px 15px'};background:#142031d9;border:1px solid #33475b;border-radius:9px;overflow:hidden;${vertical ? '' : 'flex:1;'}}
-  .metric.wide{${vertical ? 'grid-column:span 2;' : 'flex:1.8;'}}.metric-label{display:block;color:#79dbd0;font-size:${vertical ? 13 : 12}px;letter-spacing:2px;font-weight:700;margin-bottom:4px}.metric strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:${vertical ? 22 : 22}px;line-height:25px}.metric small{display:block;color:#aeb9c9;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .roll-frame{position:absolute;left:${rollLeft}px;top:${rollTop}px;width:${rollWidth}px;height:${rollHeight}px;overflow:hidden;border-top:1px solid #51617b;border-bottom:1px solid #51617b;background:rgba(8,13,28,.53)}
-  .lanes{position:absolute;left:${pad}px;top:${rollTop}px;width:${labelWidth}px;height:${rollHeight}px;border-top:1px solid #51617b;border-bottom:1px solid #51617b;background:#131c2c}
-  .lane{position:absolute;left:0;right:0;border-bottom:1px solid #2c3b4d;padding:0 16px 0 18px;overflow:hidden;display:flex;align-items:center}
-  .swatch{display:block;flex:none;width:8px;height:27px;margin-right:13px;border-radius:4px}.lane-name{display:block;font-size:${vertical ? 21 : 20}px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  *{box-sizing:border-box}html,body{margin:0;width:${width}px;height:${height}px;overflow:hidden;background:#111315;color:#f5f5f3;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif}
+  #stage{position:relative;width:${width}px;height:${height}px;overflow:hidden;background:#111315}
+  .prompt-label{position:absolute;top:${vertical ? 72 : 45}px;left:${pad}px;color:#9da2a5;font-size:13px;font-weight:600;letter-spacing:2px}
+  .prompt{position:absolute;top:${vertical ? 108 : 76}px;left:${pad}px;right:${pad}px;max-height:${vertical ? 345 : 155}px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${vertical ? 11 : 5};font-size:25px;line-height:31px;font-weight:500;color:#f5f5f3}
+  .metrics{position:absolute;top:${vertical ? (hasPrompt ? 470 : 75) : (hasPrompt ? 252 : 64)}px;left:${pad}px;right:${pad}px;display:grid;grid-template-columns:${vertical ? 'repeat(2,minmax(0,1fr))' : '2fr 1.15fr 1.25fr 1fr .7fr'};column-gap:${vertical ? 28 : 24}px;row-gap:8px}
+  .metric{min-width:0;min-height:${vertical ? 66 : 69}px;padding:10px 0 0;border-top:1px solid #3b3e41;overflow:hidden}
+  .metric.wide{${vertical ? 'grid-column:span 2;' : ''}}.metric-label{display:block;color:#92989c;font-size:12px;letter-spacing:1.5px;font-weight:600;margin-bottom:7px}.metric strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:${vertical ? 23 : 22}px;line-height:26px;font-weight:600}.metric small{display:block;color:#a4aaad;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+  .model-value{display:flex;align-items:center;gap:12px;min-width:0}.model-icon{display:flex;flex:none;width:25px;height:25px;color:#f5f5f3}.model-icon svg{width:100%;height:100%}
+  .roll-frame{position:absolute;left:${rollLeft}px;top:${rollTop}px;width:${rollWidth}px;height:${rollHeight}px;overflow:hidden;border-top:1px solid #44484b;border-bottom:1px solid #44484b;background:#1a1d20;background-image:linear-gradient(to bottom,transparent calc(100% - 1px),#303438 calc(100% - 1px));background-size:100% ${laneHeight}px}
+  .lanes{position:absolute;left:${pad}px;top:${rollTop}px;width:${labelWidth}px;height:${rollHeight}px;border-top:1px solid #44484b;border-bottom:1px solid #44484b;background:#171a1d}
+  .lane{position:absolute;left:0;right:0;border-bottom:1px solid #303438;padding:0 16px;overflow:hidden;display:flex;align-items:center}
+  .swatch{display:block;flex:none;width:5px;height:25px;margin-right:15px;border-radius:2px}.lane-name{display:block;font-size:${vertical ? 20 : 18}px;font-weight:500;color:#d9dcdd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .roll{position:absolute;left:0;top:0;width:${sheetWidth}px;height:100%;animation:scroll-roll ${duration}s linear both}
   @keyframes scroll-roll{0%{transform:translateX(0)}${scrollPercent}%{transform:translateX(-${travel}px)}100%{transform:translateX(-${travel}px)}}
-  .tick{position:absolute;top:0;bottom:0;width:1px;background:#52657c55}.tick span{position:absolute;left:8px;top:10px;color:#7f91a6;font-size:13px;font-weight:700;letter-spacing:1px}
-  .note{position:absolute;border-radius:5px;box-shadow:0 0 11px currentColor}
-  .now{position:absolute;left:${now}px;top:0;bottom:0;width:3px;background:#f9e8b4;box-shadow:0 0 18px #f9e8b4;z-index:4;animation:move-now ${duration}s linear both}
+  .tick{position:absolute;top:0;bottom:0;width:1px;background:#34383c}.tick span{position:absolute;left:8px;top:12px;color:#8d9397;font-size:13px;font-weight:500;letter-spacing:.5px}
+  .note{position:absolute;border-radius:2px}
+  .now{position:absolute;left:${now}px;top:0;bottom:0;width:2px;background:#f5f5f3;z-index:4;animation:move-now ${duration}s linear both}
   @keyframes move-now{0%{transform:translateX(0)}${scrollPercent}%{transform:translateX(0)}100%{transform:translateX(${nowTravel}px)}}
-  .roll-frame::before{content:"";position:absolute;left:0;top:0;bottom:0;width:${now}px;background:linear-gradient(90deg,#0a111eea,#0a111e98);z-index:3;pointer-events:none}
-  .wave{position:absolute;left:${pad}px;right:${pad}px;top:${vertical ? 1580 : 900}px;height:${vertical ? 175 : 115}px;display:flex;align-items:center;justify-content:space-between;gap:2px;overflow:hidden;border-top:1px solid #47566e;border-bottom:1px solid #47566e;padding:8px 0}
-  .wave i{flex:1;max-width:12px;min-width:2px;border-radius:3px;background:linear-gradient(#88ded1,#497e88);opacity:.7}
-  .progress{position:absolute;left:${pad}px;top:${vertical ? 1577 : 897}px;width:3px;height:${vertical ? 181 : 121}px;background:#f9e8b4;box-shadow:0 0 16px #f9e8b4;animation:move-progress ${duration}s linear both;z-index:3}
-  @keyframes move-progress{from{transform:translateX(0)}to{transform:translateX(${width - 2 * pad}px)}}
-  @media (prefers-reduced-motion:reduce){.roll,.now,.progress{animation:none}}
+  @media (prefers-reduced-motion:reduce){.roll,.now{animation:none}}
 </style></head><body>
 <div id="stage" data-composition-id="music" data-start="0" data-duration="${duration}" data-width="${width}" data-height="${height}" data-fps="30" data-no-timeline>
   ${hasPrompt ? `<div class="prompt-label">PROMPT</div><div class="prompt">${escapeHtml(details.prompt)}</div>` : ''}
   <div class="metrics">${metrics}</div>
   <div class="lanes">${laneRows.join('')}</div>
   <div class="roll-frame"><div class="roll">${grid}${noteBars.join('')}</div><div class="now"></div></div>
-  <div class="wave">${waveBars}</div><div class="progress"></div>
   <audio id="soundtrack" src="audio.wav" data-start="0" data-duration="${duration}" data-media-start="${start}" data-track-index="10"></audio>
 </div></body></html>`;
 }
@@ -265,23 +256,23 @@ async function main() {
   if (Number(process.versions.node.split('.')[0]) < 22 && !config.projectOnly) throw new Error('HyperFrames requires Node.js 22 or newer');
   const [midi, audioDuration] = await Promise.all([readFile(config.midi).then(midiNotes), Promise.resolve(secondsFromWav(config.audio))]);
   const details = await generationDetails(config);
+  const logo = await modelLogo(details.model);
   const duration = config.duration ?? audioDuration - config.start;
   if (duration <= 0 || config.start + duration > audioDuration + 0.001) throw new Error(`Excerpt must fit within the ${audioDuration.toFixed(3)}-second WAV`);
   const activeTracks = midi.tracks.filter(track => track.notes.some(note => note.end > config.start && note.start < config.start + duration));
   if (!activeTracks.length) throw new Error('No MIDI notes occur in this excerpt');
   const project = path.join(repo, 'out', 'visualize', path.basename(config.out, path.extname(config.out)));
-  const levels = waveform(config.audio, config.start, duration, config.aspect === 'vertical' ? 160 : 230);
   await mkdir(project, { recursive: true });
   await mkdir(path.dirname(config.out), { recursive: true });
   await Promise.all([
     copyFile(config.audio, path.join(project, 'audio.wav')),
-    writeFile(path.join(project, 'index.html'), composition({ documentTitle: midi.title || path.basename(config.midi, path.extname(config.midi)), details, tracks: activeTracks, levels, start: config.start, duration, aspect: config.aspect })),
+    writeFile(path.join(project, 'index.html'), composition({ documentTitle: midi.title || path.basename(config.midi, path.extname(config.midi)), details, logo, tracks: activeTracks, start: config.start, duration, aspect: config.aspect })),
     writeFile(path.join(project, 'source.json'), JSON.stringify({ midi: config.midi, audio: config.audio, start: config.start, duration, aspect: config.aspect, details, tracks: activeTracks.map(({ name, notes }) => ({ name, noteCount: notes.filter(note => note.end > config.start && note.start < config.start + duration).length })) }, null, 2)),
   ]);
   console.log(`HyperFrames project: ${project}`);
   if (config.projectOnly) return;
   console.log(`Rendering ${duration.toFixed(1)} seconds to ${config.out}`);
-  run('npx', ['--yes', `hyperframes@${hyperframesVersion}`, 'render', '.', '--output', config.out, '--fps', '30', '--quality', config.quality, '--workers', '4'], { cwd: project, stdio: 'inherit' });
+  run('npx', ['--yes', `hyperframes@${hyperframesVersion}`, 'render', '.', '--output', config.out, '--fps', '30', '--quality', config.quality, '--workers', '4', '--no-browser-gpu'], { cwd: project, stdio: 'inherit' });
   const rendered = JSON.parse(run('ffprobe', ['-v', 'error', '-show_entries', 'format=duration:stream=codec_type', '-of', 'json', config.out]));
   if (!rendered.streams?.some(stream => stream.codec_type === 'audio')) throw new Error('Rendered MP4 has no audio stream');
   if (Math.abs(Number(rendered.format.duration) - duration) > 0.1) throw new Error('Rendered MP4 duration differs from requested excerpt');
