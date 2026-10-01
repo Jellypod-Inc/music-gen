@@ -1,0 +1,31 @@
+package.json
+  s_fcc69843803ae0::t_c5016cdfce30f2 2
+README.md
+  s_fcc69843803ae0::t_c5016cdfce30f2 1,29,34,48
+skills/music-gen-instrumental/SKILL.md
+  s_fcc69843803ae0::t_c5016cdfce30f2 3
+NOTICE
+  s_fcc69843803ae0::t_f42b420a8ca258 1
+.github/workflows/publish.yml
+  s_fcc69843803ae0::t_21967d8e2cc20a 26-28
+  s_fcc69843803ae0::t_5b98cb3090a4d6 1-21,23-25,29
+  s_fcc69843803ae0::t_7d5b4dee51f21a 22
+package-lock.json
+  s_fcc69843803ae0::t_a57df6fe7629ed 2,8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "eaed680f7389a1d0ab37d90b47c59f2c3f2689fc",
+  "prompts": {},
+  "sessions": {
+    "s_fcc69843803ae0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f451-5622-76e1-9321-8cd8ff5a1694",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pierson Marks <pierson@jellypod.ai>"
+    }
+  }
+}
