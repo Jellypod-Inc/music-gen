@@ -1,0 +1,28 @@
+README.md
+  s_fcc69843803ae0::t_5fbe9484d8868f 101,104
+  s_fcc69843803ae0::t_c79f6aeb6b85be 95-100,102-103
+tools/visualize.mjs
+  s_fcc69843803ae0::t_c79f6aeb6b85be 1-48,50-53,55-144,151-154,157-158,160-165,167-169,172-185,187-188,191-197,199-216,219-224,227-238
+  s_fcc69843803ae0::t_27afcd5eb00721 54
+  s_fcc69843803ae0::t_5fbe9484d8868f 49,170-171
+  s_fcc69843803ae0::t_3b7cbcbd9a536d 145-150,155-156,159,166,186,189-190,198,217-218,225-226
+package.json
+  s_fcc69843803ae0::t_5fbe9484d8868f 40
+  s_fcc69843803ae0::t_c79f6aeb6b85be 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1c8e528f51e33ef48f13b3822922bc86314eb8ce",
+  "prompts": {},
+  "sessions": {
+    "s_fcc69843803ae0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f451-5622-76e1-9321-8cd8ff5a1694",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pierson Marks <pierson@jellypod.ai>"
+    }
+  }
+}
