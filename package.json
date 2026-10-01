@@ -1,5 +1,5 @@
 {
-  "name": "music-gen",
+  "name": "@jellypod/music-gen",
   "version": "0.1.0",
   "description": "Generate instrumental scores, MIDI, and WAV with an AI SDK model or an interactive agent skill",
   "type": "module",

@@ -1,4 +1,4 @@
-# music-gen
+# @jellypod/music-gen
 
 Generate instrumental music as a score, MIDI, and WAV. Bring an AI SDK model for composition; use the built-in synth or your own renderer. A bundled skill also lets Claude Code or Codex compose with your existing agent session.
 
@@ -26,12 +26,12 @@ Both WAVs were rendered with FluidSynth and the [GeneralUser GS](https://www.sch
 
 ## Generate with the API
 
-Install from this repository with `pnpm add github:Jellypod-Inc/music-gen-instrumental ai` (or `pnpm add music-gen ai` after the npm release), set `AI_GATEWAY_API_KEY`, and pass any supported AI SDK model:
+Install from this repository with `pnpm add github:Jellypod-Inc/music-gen-instrumental ai` (or `pnpm add @jellypod/music-gen ai` after the npm release), set `AI_GATEWAY_API_KEY`, and pass any supported AI SDK model:
 
 ```ts
 import { writeFile } from 'node:fs/promises';
 import { gateway } from 'ai';
-import { generateMusic } from 'music-gen';
+import { generateMusic } from '@jellypod/music-gen';
 
 const result = await generateMusic({
   prompt: 'A 30-second warm piano theme with a clear ending',
@@ -45,7 +45,7 @@ await writeFile('theme.wav', result.outputs[1].bytes);
 console.log(result.metadata.model.usage, result.metadata.run);
 ```
 
-The model chooses the tracks and instruments. The default renderer needs no sound assets or native tools. For a SoundFont, plugin host, or remote render service, pass a `MusicRenderer`; the optional `createFluidSynthRenderer` adapter is exported from `music-gen/renderers/fluidsynth`.
+The model chooses the tracks and instruments. The default renderer needs no sound assets or native tools. For a SoundFont, plugin host, or remote render service, pass a `MusicRenderer`; the optional `createFluidSynthRenderer` adapter is exported from `@jellypod/music-gen/renderers/fluidsynth`.
 
 To revise after listening, pass a `reviewer` callback. It receives each preview WAV and returns a feedback string or `null` to accept. The SDK sends that feedback and the previous score back to the composer. No audio judge or second model is built in.
 

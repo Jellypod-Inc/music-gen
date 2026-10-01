@@ -1,6 +1,6 @@
 ---
 name: music-gen-instrumental
-description: Compose instrumental music with the current agent, then validate and render a local score to MIDI and WAV using the music-gen package. Use when the user asks for a song, theme, soundtrack, loop, or instrumental audio file in Claude Code or Codex.
+description: Compose instrumental music with the current agent, then validate and render a local score to MIDI and WAV using the @jellypod/music-gen package. Use when the user asks for a song, theme, soundtrack, loop, or instrumental audio file in Claude Code or Codex.
 ---
 
 # Create instrumental music locally
