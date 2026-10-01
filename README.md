@@ -20,9 +20,8 @@ Prompt used for this run:
 | Input tokens | 1,688 |
 | Output tokens | 26,241, including 22,189 thinking tokens |
 | Generation time | 4m 18s |
-| Gateway-reported model cost | $0.531572 |
 
-The WAV was rendered with FluidSynth and the [GeneralUser GS](https://www.schristiancollins.com/generaluser) SoundFont. The SoundFont is not bundled; the [author permits publishing music made with it](https://www.schristiancollins.com/generaluser). These numbers describe this one stochastic run, not a fixed price or speed.
+The WAV was rendered with FluidSynth and the [GeneralUser GS](https://www.schristiancollins.com/generaluser) SoundFont. The SoundFont is not bundled; the [author permits publishing music made with it](https://www.schristiancollins.com/generaluser). These numbers describe this one stochastic run; other generations may take different amounts of time and tokens.
 
 ## Generate with the API
 
