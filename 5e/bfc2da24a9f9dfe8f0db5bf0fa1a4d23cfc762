@@ -1,0 +1,22 @@
+README.md
+  s_fcc69843803ae0::t_bf75795fb8f94e 106
+tools/visualize.mjs
+  s_fcc69843803ae0::t_2aee67e7c5c51d 24-26
+  s_fcc69843803ae0::t_cd8ace7a0126bf 181,217,223-228,243-244,302
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5ebfc2da24a9f9dfe8f0db5bf0fa1a4d23cfc762",
+  "prompts": {},
+  "sessions": {
+    "s_fcc69843803ae0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f451-5622-76e1-9321-8cd8ff5a1694",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pierson Marks <pierson@jellypod.ai>"
+    }
+  }
+}
