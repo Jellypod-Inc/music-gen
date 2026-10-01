@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { parseMidi } from 'midi-file';
 
 export function validateSuite(suite) {
-  if (![1, 2, 3].includes(suite.suiteVersion) || !Array.isArray(suite.cases) || suite.cases.length < 12 || suite.cases.length > 20) throw new Error('suite must have a supported version and contain 12–20 cases');
+  if (![1, 2, 3, 4].includes(suite.suiteVersion) || !Array.isArray(suite.cases) || suite.cases.length < 12 || suite.cases.length > 20) throw new Error('suite must have a supported version and contain 12–20 cases');
   const ids = new Set();
   for (const c of suite.cases) {
     if (!/^[a-z0-9-]+$/.test(c.id) || ids.has(c.id)) throw new Error(`invalid or duplicate case id: ${c.id}`);
