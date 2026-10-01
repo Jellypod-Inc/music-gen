@@ -1,0 +1,24 @@
+README.md
+  s_fcc69843803ae0::t_48d05e9f8ef52e 3-5,11-12,27,66,79
+  s_fcc69843803ae0::t_c6f668539fb348 55-65,67-69,76
+  s_fcc69843803ae0::t_4c001cd0ff82a7 82
+package.json
+  s_fcc69843803ae0::t_48d05e9f8ef52e 9
+  s_fcc69843803ae0::t_f43f6e26ed2859 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "941f433f5d9177ce9a7accdb0eac14cc02461a4a",
+  "prompts": {},
+  "sessions": {
+    "s_fcc69843803ae0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f451-5622-76e1-9321-8cd8ff5a1694",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pierson Marks <pierson@jellypod.ai>"
+    }
+  }
+}
