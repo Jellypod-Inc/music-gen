@@ -155,6 +155,10 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 }
 
+function displayTrackName(name) {
+  return name.replaceAll('_', ' ').replace(/(^|[\s/-])(\p{L})/gu, (_, separator, letter) => separator + letter.toUpperCase());
+}
+
 function formatTime(seconds) {
   if (seconds < 60) return `${Number(seconds.toFixed(1))}s`;
   const minutes = Math.floor(seconds / 60), remainder = seconds - minutes * 60;
@@ -213,7 +217,7 @@ function composition({ documentTitle, details, logo, tracks, start, duration, as
       const visibleWidth = width < 4 ? Math.max(0.5, width) : width - Math.min(6, Math.max(2, width * 0.08));
       noteBars.push(`<div class="note" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${visibleWidth.toFixed(1)}px;height:${noteHeight.toFixed(1)}px;background:${color};opacity:${(0.76 + note.velocity / 127 * 0.24).toFixed(2)}"></div>`);
     }
-    return `<div class="lane" style="top:${rowTop.toFixed(1)}px;height:${laneHeight.toFixed(1)}px"><span class="swatch" style="background:${color}"></span><span class="lane-name">${escapeHtml(track.name)}</span></div>`;
+    return `<div class="lane" style="top:${rowTop.toFixed(1)}px;height:${laneHeight.toFixed(1)}px"><span class="swatch" style="background:${color}"></span><span class="lane-name">${escapeHtml(displayTrackName(track.name))}</span></div>`;
   });
   const grid = Array.from({ length: Math.ceil(duration) + 1 }, (_, second) => `<div class="tick" style="left:${(now + second * speed).toFixed(1)}px"><span>${String(Math.floor(start + second)).padStart(2, '0')}s</span></div>`).join('');
   const metric = (label, value, detail = '') => `<div class="metric"><span class="metric-label">${label}</span><strong>${escapeHtml(value)}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</div>`;
