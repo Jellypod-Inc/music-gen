@@ -1,8 +1,14 @@
-# AI Music Gen
+# Music Generator
+
+Generate instrumental music with AI.
+
+[![npm version](https://img.shields.io/npm/v/@jellypod/music-gen.svg)](https://www.npmjs.com/package/@jellypod/music-gen)
+[![CI status](https://github.com/Jellypod-Inc/music-gen/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Jellypod-Inc/music-gen/actions/workflows/ci.yml)
+[![Apache-2.0 license](https://img.shields.io/npm/l/@jellypod/music-gen.svg)](https://github.com/Jellypod-Inc/music-gen/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/Jellypod-Inc/music-gen.svg?style=flat)](https://github.com/Jellypod-Inc/music-gen/stargazers)
 
 ![Retro instrumental music studio with a synthesizer, MIDI notes, and a night sky](https://raw.githubusercontent.com/Jellypod-Inc/music-gen/main/assets/retro-instrumental.png)
 
-Generate instrumental music with AI.
 The [Jellypod](https://jellypod.com) music-gen harness lets LLMs write compact scores, converts them to MIDI, and renders WAV audio with the built-in synth or a renderer such as FluidSynth with a SoundFont.
 The package lets you choose a model, reasoning level, and length. It uses the Vercel AI SDK for model switching and includes a skill for Claude Code or Codex to compose with your existing agent session.
 
