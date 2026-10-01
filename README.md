@@ -103,6 +103,6 @@ pnpm visualize --midi examples/audio/lanterns-over-the-harbor.mid
 
 The matching `.wav` and optional `.metadata.json` are found automatically. With no `--start` or `--duration`, the entire WAV is rendered. Add `--start 30 --duration 15` for an excerpt or `--aspect vertical` for a 9:16 video.
 
-The metadata file supplies the prompt, model, thinking level, token counts, and generation time shown above the notes. Local logos cover Claude, GPT, Gemini, Qwen, and Kimi models; other model IDs get a neutral mark. For other outputs, pass `--metadata path/to/result.json` with the prompt and the SDK's `metadata` object, or use `--prompt`, `--model`, `--thinking`, `--input-tokens`, and `--output-tokens` directly.
+The video shows the model as its heading, with thinking level and total tokens beneath it, followed by the prompt. Local logos cover Claude, GPT, Gemini, Qwen, and Kimi models; other model IDs get a neutral mark. The matching metadata file supplies these details automatically. For other outputs, pass `--metadata path/to/result.json` with the prompt and the SDK's `metadata` object, or use `--prompt`, `--model`, `--thinking`, `--input-tokens`, and `--output-tokens` directly.
 
 `--project-only` writes the editable HyperFrames composition without rendering. Video generation requires Node 22+ and FFmpeg; the command runs a pinned HyperFrames CLI with `npx` on demand. The visualizer is development tooling and is not included in the npm package.

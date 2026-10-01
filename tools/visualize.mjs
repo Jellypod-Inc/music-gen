@@ -21,9 +21,9 @@ Options:
   --prompt TEXT            Prompt shown above the music
   --model ID               Model ID shown in the video
   --thinking LEVEL         Reasoning level shown in the video
-  --input-tokens COUNT     Input token count
-  --output-tokens COUNT    Output token count
-  --generation-ms COUNT    Generation elapsed time in milliseconds
+  --input-tokens COUNT     Input tokens (included in displayed total)
+  --output-tokens COUNT    Output tokens (included in displayed total)
+  --generation-ms COUNT    Generation elapsed time kept in project JSON
   --quality draft|standard|high  HyperFrames render quality (default: standard)
   --project-only           Write the editable composition without rendering
   --help                   Show this help`;
@@ -159,12 +159,6 @@ function displayTrackName(name) {
   return name.replaceAll('_', ' ').replace(/(^|[\s/-])(\p{L})/gu, (_, separator, letter) => separator + letter.toUpperCase());
 }
 
-function formatTime(seconds) {
-  if (seconds < 60) return `${Number(seconds.toFixed(1))}s`;
-  const minutes = Math.floor(seconds / 60), remainder = seconds - minutes * 60;
-  return `${minutes}m ${Number(remainder.toFixed(1))}s`;
-}
-
 function thinkingLabel(level) {
   return ({ xhigh: 'Extra high', low: 'Low', medium: 'Medium', high: 'High', max: 'Max', ultra: 'Ultra' })[level] ?? level;
 }
@@ -184,7 +178,7 @@ function composition({ documentTitle, details, logo, tracks, start, duration, as
   const width = vertical ? 1080 : 1920, height = vertical ? 1920 : 1080;
   const pad = vertical ? 62 : 68, labelWidth = vertical ? 180 : 190;
   const hasPrompt = Boolean(details.prompt);
-  const rollTop = vertical ? (hasPrompt ? 720 : 330) : (hasPrompt ? 350 : 160);
+  const rollTop = vertical ? (hasPrompt ? 650 : 270) : (hasPrompt ? 375 : 195);
   const rollHeight = (vertical ? 1860 : 1025) - rollTop;
   const laneGap = Math.min(vertical ? 12 : 10, rollHeight / tracks.length * 0.2);
   const laneHeight = (rollHeight - laneGap * (tracks.length - 1)) / tracks.length;
@@ -220,26 +214,18 @@ function composition({ documentTitle, details, logo, tracks, start, duration, as
     return `<div class="lane" style="top:${rowTop.toFixed(1)}px;height:${laneHeight.toFixed(1)}px"><span class="swatch" style="background:${color}"></span><span class="lane-name">${escapeHtml(displayTrackName(track.name))}</span></div>`;
   });
   const grid = Array.from({ length: Math.ceil(duration) + 1 }, (_, second) => `<div class="tick" style="left:${(now + second * speed).toFixed(1)}px"><span>${String(Math.floor(start + second)).padStart(2, '0')}s</span></div>`).join('');
-  const metric = (label, value, detail = '') => `<div class="metric"><span class="metric-label">${label}</span><strong>${escapeHtml(value)}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</div>`;
-  const tokenDetail = [details.inputTokens != null ? `${details.inputTokens.toLocaleString()} in` : null, details.outputTokens != null ? `${details.outputTokens.toLocaleString()} out` : null].filter(Boolean).join('  /  ');
-  const metrics = [
-    details.model ? `<div class="metric wide"><span class="metric-label">MODEL</span><div class="model-value"><span class="model-icon">${logo}</span><strong>${escapeHtml(details.model)}</strong></div></div>` : '',
-    details.thinking ? metric('THINKING', thinkingLabel(details.thinking)) : '',
-    details.totalTokens != null ? metric('TOKENS', details.totalTokens.toLocaleString(), tokenDetail) : '',
-    Number.isFinite(Number(details.generationMs)) && details.generationMs != null ? metric('GENERATION', formatTime(Number(details.generationMs) / 1000)) : '',
-    metric('DURATION', `${Number(duration.toFixed(1))}s`),
-  ].join('');
+  const byline = [details.thinking ? thinkingLabel(details.thinking) : null, details.totalTokens != null ? `${details.totalTokens.toLocaleString()} tokens` : null].filter(Boolean).join(' · ');
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=${width},height=${height}"><title>${escapeHtml(documentTitle)}</title>
 <style>
   *{box-sizing:border-box}html,body{margin:0;width:${width}px;height:${height}px;overflow:hidden;background:#111315;color:#f5f5f3;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
   #stage{position:relative;width:${width}px;height:${height}px;overflow:hidden;background:#111315}
-  .prompt-label{position:absolute;top:${vertical ? 72 : 45}px;left:${pad}px;color:#9da2a5;font-size:13px;font-weight:600;letter-spacing:2px}
-  .prompt{position:absolute;top:${vertical ? 108 : 76}px;left:${pad}px;right:${pad}px;max-height:${vertical ? 345 : 155}px;overflow:hidden;font-size:25px;line-height:31px;font-weight:500;color:#f5f5f3}
-  .metrics{position:absolute;top:${vertical ? (hasPrompt ? 470 : 75) : (hasPrompt ? 252 : 64)}px;left:${pad}px;right:${pad}px;display:grid;grid-template-columns:${vertical ? 'repeat(2,minmax(0,1fr))' : '2fr 1.15fr 1.25fr 1fr .7fr'};column-gap:${vertical ? 28 : 24}px;row-gap:8px}
-  .metric{min-width:0;min-height:${vertical ? 66 : 69}px;padding:10px 0 0;border-top:1px solid #3b3e41;overflow:hidden}
-  .metric.wide{${vertical ? 'grid-column:span 2;' : ''}}.metric-label{display:block;color:#92989c;font-size:12px;letter-spacing:1.5px;font-weight:600;margin-bottom:7px}.metric strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:${vertical ? 23 : 22}px;line-height:26px;font-weight:600}.metric small{display:block;color:#a4aaad;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
-  .model-value{display:flex;align-items:center;gap:12px;min-width:0}.model-icon{display:flex;flex:none;width:25px;height:25px;color:#f5f5f3}.model-icon svg{width:100%;height:100%}
+  .model-title{position:absolute;top:${vertical ? 72 : 38}px;left:${pad}px;right:${pad}px;height:${vertical ? 76 : 68}px;display:flex;align-items:center;gap:18px;min-width:0}
+  .model-icon{display:flex;flex:none;width:${vertical ? 48 : 44}px;height:${vertical ? 48 : 44}px;color:#f5f5f3}.model-icon svg{width:100%;height:100%}
+  .model-name{display:block;min-width:0;overflow:hidden;white-space:nowrap;font-size:${vertical ? 56 : 52}px;line-height:${vertical ? 70 : 64}px;font-weight:600;letter-spacing:-1.8px}
+  .model-subline{position:absolute;top:${vertical ? 157 : 111}px;left:${pad}px;right:${pad}px;color:#abb1b4;font-size:${vertical ? 23 : 20}px;line-height:30px;font-weight:500}
+  .prompt-label{position:absolute;top:${vertical ? 226 : 161}px;left:${pad}px;color:#9da2a5;font-size:13px;font-weight:600;letter-spacing:2px}
+  .prompt{position:absolute;top:${vertical ? 262 : 190}px;left:${pad}px;right:${pad}px;max-height:${vertical ? 345 : 155}px;overflow:hidden;font-size:25px;line-height:31px;font-weight:500;color:#f5f5f3}
   .roll-frame{position:absolute;left:${rollLeft}px;top:${rollTop}px;width:${rollWidth}px;height:${rollHeight}px;overflow:hidden;background:#111315}
   .roll-lane{position:absolute;left:0;right:0;background:#1a1d20}
   .lanes{position:absolute;left:${pad}px;top:${rollTop}px;width:${labelWidth}px;height:${rollHeight}px;background:#111315}
@@ -254,8 +240,9 @@ function composition({ documentTitle, details, logo, tracks, start, duration, as
   @media (prefers-reduced-motion:reduce){.roll,.now{animation:none}}
 </style></head><body>
 <div id="stage" data-composition-id="music" data-start="0" data-duration="${duration}" data-width="${width}" data-height="${height}" data-fps="30" data-no-timeline>
+  <div class="model-title">${logo ? `<span class="model-icon">${logo}</span>` : ''}<span class="model-name">${escapeHtml(details.model || documentTitle)}</span></div>
+  ${byline ? `<div class="model-subline">${escapeHtml(byline)}</div>` : ''}
   ${hasPrompt ? `<div class="prompt-label">PROMPT</div><div class="prompt">${escapeHtml(details.prompt)}</div>` : ''}
-  <div class="metrics">${metrics}</div>
   <div class="lanes">${laneRows.join('')}</div>
   <div class="roll-frame">${rollRows.join('')}<div class="roll">${grid}${noteBars.join('')}</div><div class="now"></div></div>
   <audio id="soundtrack" src="audio.wav" data-start="0" data-duration="${duration}" data-media-start="${start}" data-track-index="10"></audio>
@@ -312,7 +299,7 @@ function composition({ documentTitle, details, logo, tracks, start, duration, as
     element.style.height = height + 'px';
     element.replaceChildren(canvas);
   }
-  document.querySelectorAll('.prompt-label,.prompt,.metric-label,.metric strong,.metric small,.lane-name,.tick span').forEach(paintText);
+  document.querySelectorAll('.model-name,.model-subline,.prompt-label,.prompt,.lane-name,.tick span').forEach(paintText);
 </script></body></html>`;
 }
 
