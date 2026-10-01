@@ -35,8 +35,9 @@
     "test": "npm run build && node --import tsx --test test/*.test.ts test/*.test.mjs evals/*.test.mjs",
     "test:live": "npm run build && node scripts/live-smoke.mjs",
     "eval:music": "npm run build && node evals/run.mjs",
+    "visualize": "node tools/visualize.mjs",
     "check": "npm test",
-    "lint:changed": "tsc --noEmit -p tsconfig.json && for file in bin/*.mjs evals/*.mjs scripts/*.mjs examples/*.mjs; do node --check \"$file\" || exit 1; done"
+    "lint:changed": "tsc --noEmit -p tsconfig.json && for file in bin/*.mjs evals/*.mjs scripts/*.mjs examples/*.mjs tools/*.mjs; do node --check \"$file\" || exit 1; done"
   },
   "dependencies": {
     "ai": "^7.0.124",

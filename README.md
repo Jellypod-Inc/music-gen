@@ -92,3 +92,13 @@ The CLI detects your agent; add `-g` to install the skill for all projects. Ask 
 ## Development
 
 `pnpm test` runs deterministic SDK and CLI tests. [In-repo evals](evals/README.md) run only when requested because live generations cost money. The package is [Apache 2.0 licensed](LICENSE); no SoundFont or native synth is bundled.
+
+### Turn a result into a video
+
+From a clone of this repo, use the repo-only HyperFrames visualizer. It reads the MIDI notes, puts the WAV on the soundtrack, and writes a vertical MP4 under `out/videos/`:
+
+```sh
+pnpm visualize --midi examples/audio/lanterns-over-the-harbor.mid --start 30 --duration 15
+```
+
+The matching `.wav` is found automatically; omit `--start` and `--duration` to render the whole piece. Add `--aspect horizontal` for a 16:9 video. `--project-only` writes the editable HyperFrames composition without rendering. Video generation requires Node 22+ and FFmpeg; the command runs a pinned HyperFrames CLI with `npx` on demand. The visualizer is development tooling and is not included in the npm package.
