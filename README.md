@@ -26,16 +26,19 @@ Both WAVs were rendered with FluidSynth and the [GeneralUser GS](https://www.sch
 
 ## Generate with the API
 
-Install from this repository with `pnpm add github:Jellypod-Inc/music-gen-instrumental ai` (or `pnpm add @jellypod/music-gen ai` after the npm release), set `AI_GATEWAY_API_KEY`, and pass any supported AI SDK model:
+Install the published package, set `AI_GATEWAY_API_KEY`, and pass an AI Gateway model ID:
+
+```sh
+pnpm add @jellypod/music-gen
+```
 
 ```ts
 import { writeFile } from 'node:fs/promises';
-import { gateway } from 'ai';
 import { generateMusic } from '@jellypod/music-gen';
 
 const result = await generateMusic({
   prompt: 'A 30-second warm piano theme with a clear ending',
-  model: gateway('anthropic/claude-sonnet-5.5'),
+  model: 'anthropic/claude-sonnet-5.5',
   output: ['midi', 'audio'],
   length: { mode: 'duration', seconds: 30 },
 });
@@ -45,20 +48,22 @@ await writeFile('theme.wav', result.outputs[1].bytes);
 console.log(result.metadata.model.usage, result.metadata.run);
 ```
 
+The package already depends on the AI SDK. Install `ai` in your app only if you import it directly, for example to pass `gateway(...)` or another AI SDK model object.
+
 The model chooses the tracks and instruments. The default renderer needs no sound assets or native tools. For a SoundFont, plugin host, or remote render service, pass a `MusicRenderer`; the optional `createFluidSynthRenderer` adapter is exported from `@jellypod/music-gen/renderers/fluidsynth`.
 
 To revise after listening, pass a `reviewer` callback. It receives each preview WAV and returns a feedback string or `null` to accept. The SDK sends that feedback and the previous score back to the composer. No audio judge or second model is built in.
 
 ## Use it as an agent skill
 
-With Node.js 20+, npm, and Git, install the bundled skill directly from GitHub:
+With Node.js 20+ and npm, install the bundled skill from the published package:
 
 ```sh
-npm exec --yes --package=github:Jellypod-Inc/music-gen-instrumental -- music-gen-instrumental install-skill claude
+npm exec --yes --package=@jellypod/music-gen -- music-gen-instrumental install-skill claude
 # or: replace claude with codex
 ```
 
-Ask the agent for a piece. It writes a score and renders it locally; if the CLI is not installed, the skill runs it from GitHub with `npm exec`. This path uses the agent's existing session and does not need an AI Gateway key. The render command can also turn a hand-written score into MIDI and WAV without calling a model.
+Ask the agent for a piece. It writes a score and renders it locally; if the CLI is not installed, the skill runs it from npm with `npm exec`. This path uses the agent's existing session and does not need an AI Gateway key. The render command can also turn a hand-written score into MIDI and WAV without calling a model.
 
 ## Development
 
