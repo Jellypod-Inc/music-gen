@@ -15,6 +15,7 @@ Prompt used for both runs:
 
 | This run | Extra high (`xhigh`) | Low (`low`) |
 | --- | ---: | ---: |
+| AI Gateway model ID | `anthropic/claude-opus-5.5` | `anthropic/claude-opus-5.5` |
 | Audio | 60 seconds, 8 tracks, 675 notes | 60 seconds, 7 tracks, 585 notes |
 | Input tokens | 1,688 | 1,465 |
 | Output tokens | 26,241 | 3,804 |
