@@ -51,14 +51,14 @@ To revise after listening, pass a `reviewer` callback. It receives each preview 
 
 ## Use it as an agent skill
 
-From this checkout, run `pnpm install && pnpm build`, then install the bundled skill:
+With Node.js 20+, npm, and Git, install the bundled skill directly from GitHub:
 
 ```sh
-node bin/music-gen-instrumental.mjs install-skill claude
-# or: node bin/music-gen-instrumental.mjs install-skill codex
+npm exec --yes --package=github:Jellypod-Inc/music-gen-instrumental -- music-gen-instrumental install-skill claude
+# or: replace claude with codex
 ```
 
-Ask the agent for a piece. It writes a score and renders it locally using `music-gen-instrumental render score.json --out ./music-output`. This path uses the agent's existing session and does not need an AI Gateway key. The render command can also turn a hand-written score into MIDI and WAV without calling a model.
+Ask the agent for a piece. It writes a score and renders it locally; if the CLI is not installed, the skill runs it from GitHub with `npm exec`. This path uses the agent's existing session and does not need an AI Gateway key. The render command can also turn a hand-written score into MIDI and WAV without calling a model.
 
 ## Development
 
