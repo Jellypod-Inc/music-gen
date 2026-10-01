@@ -1,0 +1,41 @@
+tools/logos/LICENSE
+  s_fcc69843803ae0::t_88dc2fb1681224 1-26
+README.md
+  s_fcc69843803ae0::t_f1418143937012 104-108
+tools/visualize.mjs
+  s_fcc69843803ae0::t_a579e648bcb32d 168-178,216,232,259,269
+  s_fcc69843803ae0::t_365fe864e256de 201-202,207-208
+  s_fcc69843803ae0::t_c7f20d29233810 10,181,184,187
+  s_fcc69843803ae0::t_21118e79aeee5b 228
+  s_fcc69843803ae0::t_b52dc7cadce5a9 88
+  s_fcc69843803ae0::t_0a9503df6526ae 225-227,230-231,233-236,239-241,243
+  s_fcc69843803ae0::t_8fe12e1afe91ce 183,229
+  s_fcc69843803ae0::t_f782787fcc676a 275
+  s_fcc69843803ae0::t_f8093e9993a330 213
+tools/logos/claude.svg
+  s_fcc69843803ae0::t_f687def660fcc1 1
+tools/logos/gemini.svg
+  s_fcc69843803ae0::t_5ecf12c8b8d579 1
+tools/logos/kimi.svg
+  s_fcc69843803ae0::t_0e181bf37494e8 1
+tools/logos/openai.svg
+  s_fcc69843803ae0::t_c0e403b773c38e 1
+tools/logos/qwen.svg
+  s_fcc69843803ae0::t_28c6189af3fa1e 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c3c565f06c10bb57ef25fd02b2a8116eab0b6530",
+  "prompts": {},
+  "sessions": {
+    "s_fcc69843803ae0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f451-5622-76e1-9321-8cd8ff5a1694",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pierson Marks <pierson@jellypod.ai>"
+    }
+  }
+}
