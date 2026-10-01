@@ -4,24 +4,24 @@ Generate instrumental music as a score, MIDI, and WAV. Bring an AI SDK model for
 
 ## Listen
 
-**Lanterns Over the Harbor** — an original 60-second piece generated with this SDK.
+**Lanterns Over the Harbor** — two original 60-second takes from the same prompt and Claude Opus 5.5 via AI Gateway.
 
-[▶ Play the WAV in your browser](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen-instrumental@main/examples/audio/lanterns-over-the-harbor.wav) · [Download WAV](examples/audio/lanterns-over-the-harbor.wav) · [MIDI](examples/audio/lanterns-over-the-harbor.mid)
+- Extra high thinking: [▶ Play WAV](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen-instrumental@main/examples/audio/lanterns-over-the-harbor.wav) · [Download WAV](examples/audio/lanterns-over-the-harbor.wav) · [MIDI](examples/audio/lanterns-over-the-harbor.mid)
+- Low thinking: [▶ Play WAV](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen-instrumental@main/examples/audio/lanterns-over-the-harbor-low.wav) · [Download WAV](examples/audio/lanterns-over-the-harbor-low.wav) · [MIDI](examples/audio/lanterns-over-the-harbor-low.mid)
 
-Prompt used for this run:
+Prompt used for both runs:
 
 > Compose an original, emotionally compelling instrumental piece that feels like a complete musical journey rather than a loop or a technical demo. Aim for memorable melodic writing, expressive harmony, rhythmic movement, and an arrangement with a clear opening, development, a contrasting lift, a satisfying climax, and a resolved ending. Give every instrument a musical purpose. Use as many or as few tracks as the piece needs; choose the instruments, style, meter, tempo, motifs, and dynamics yourself. Make it sound coherent and listenable as a standalone song, with tasteful variation rather than mechanical repetition. The final audio should be exactly 60 seconds.
 
-| This run | Result |
-| --- | ---: |
-| Model | Claude Opus 5.5 via AI Gateway |
-| Thinking level | Extra high (`xhigh`) |
-| Audio | 60 seconds, 8 tracks, 675 notes |
-| Input tokens | 1,688 |
-| Output tokens | 26,241, including 22,189 thinking tokens |
-| Generation time | 4m 18s |
+| This run | Extra high (`xhigh`) | Low (`low`) |
+| --- | ---: | ---: |
+| Audio | 60 seconds, 8 tracks, 675 notes | 60 seconds, 7 tracks, 585 notes |
+| Input tokens | 1,688 | 1,465 |
+| Output tokens | 26,241 | 3,804 |
+| Thinking tokens included above | 22,189 | 1,509 |
+| Generation time | 4m 18s | 35.7s |
 
-The WAV was rendered with FluidSynth and the [GeneralUser GS](https://www.schristiancollins.com/generaluser) SoundFont. The SoundFont is not bundled; the [author permits publishing music made with it](https://www.schristiancollins.com/generaluser). These numbers describe this one stochastic run; other generations may take different amounts of time and tokens.
+Both WAVs were rendered with FluidSynth and the [GeneralUser GS](https://www.schristiancollins.com/generaluser) SoundFont. The SoundFont is not bundled; the [author permits publishing music made with it](https://www.schristiancollins.com/generaluser). The low-thinking take used a clarified compact-score instruction after an earlier low-thinking attempt failed validation. These numbers describe the two successful runs; other generations may take different amounts of time and tokens.
 
 ## Generate with the API
 

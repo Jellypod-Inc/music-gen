@@ -128,7 +128,7 @@ export async function generateMusic(options: GenerateMusicOptions): Promise<Musi
       temperature: options.temperature,
       maxOutputTokens: options.maxOutputTokens,
       instructions: scoreFormat === 'compact'
-        ? 'Compose the requested music as a compact multitrack score. Choose the tracks and instruments yourself. Notes are "beat,pitch,duration,velocity"; placements are "patternId,startBar,transpose". Beats are quarter notes. Keep notes within the score.'
+        ? 'Compose the requested music as a compact multitrack score. Choose the tracks and instruments yourself. Notes are "beat,MIDI-pitch,duration,velocity" (for example "0,60,1,90"); pitch and velocity must be integers from 0–127 and 1–127. Placements are "patternId,startBar,transpose" with zero-based bars and semitone transposition. Beats are quarter notes. Keep notes within the score.'
         : `Compose the requested music as a multitrack score. Choose the tracks and instruments yourself. Notes use quarter-note beats from zero. ${needsPatch ? 'Include a synth patch on each track.' : ''}`,
       prompt: `${options.prompt}\n${constraint}${options.maxDuration ? `\nHard maximum duration: ${options.maxDuration} seconds.` : ''}${feedback ? `\n${feedback}` : ''}${revisionScore ? `\nPrevious score to revise:\n${JSON.stringify(revisionScore)}` : ''}`,
       ...(tools ? { tools, stopWhen: isStepCount(MUSIC_AGENT_STEPS_PER_ATTEMPT) } : {}),
