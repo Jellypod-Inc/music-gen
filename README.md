@@ -65,6 +65,8 @@ interface GenerateMusicOptions {
   length?: { mode: 'auto' } | { mode: 'duration'; seconds: number } | { mode: 'bars'; bars: number; bpm?: number };
   maxDuration?: number;
   maxAttempts?: number; // defaults to 1; 2–3 opt into repairs
+  reviewer?: MusicReviewer; // receives each rendered WAV; returns feedback or null to accept
+  maxRevisions?: number; // defaults to 1 with a reviewer; at most 3
   environment?: { tools?: ToolSet };
   trace?: boolean;
   abortSignal?: AbortSignal;
@@ -74,9 +76,38 @@ interface MusicResult {
   outputs: Array<{ type: 'midi' | 'audio'; bytes: Uint8Array; mimeType: string; filename: string; format: 'mid' | 'wav' }>;
   project: MusicProject; // version 1, score and audio patches when requested
   metadata: MusicMetadata; // timing, score, model usage, run statistics, and artifact sizes
-  trace?: { proposals: unknown[]; feedback: string[]; steps: unknown[] };
+  trace?: { proposals: unknown[]; feedback: string[]; reviews: Array<{ attempt: number; feedback: string | null }>; steps: unknown[] };
 }
 ```
+
+### Preview and revise with listener feedback
+
+`generateMusic` can render a preview, pass its WAV to an application-supplied listener, and ask the composer to revise its previous score using the feedback. The revised render is passed to the listener again. No second model or audio upload is built into this workflow. The listener can be a person using your app or another reviewer you explicitly provide.
+
+```ts
+import { writeFile } from 'node:fs/promises';
+import { createInterface } from 'node:readline/promises';
+import { stdin, stdout } from 'node:process';
+import { gateway } from 'ai';
+import { generateMusic } from 'music-gen-instrumental';
+
+const terminal = createInterface({ input: stdin, output: stdout });
+const result = await generateMusic({
+  prompt: 'A lively orchestral opening with a clear brass melody',
+  model: gateway('anthropic/claude-sonnet-5.5'),
+  output: ['midi', 'audio'],
+  reviewer: async ({ audio, iteration }) => {
+    const path = `preview-${iteration}.wav`;
+    await writeFile(path, audio);
+    return (await terminal.question(`Listen to ${path}. What should change? Press Enter to accept: `)).trim() || null;
+  },
+  maxRevisions: 1,
+  trace: true,
+});
+terminal.close();
+```
+
+Return a feedback string to request a revised complete score, or `null` to accept. The SDK passes the prior score and critique into the revision call. If the revision limit is reached, the final preview is still reviewed and its unresolved feedback is retained in `metadata.reviews`. Claude's API does not accept audio input, so a Claude-only API call cannot hear its render; MIDI checks or waveform measurements are not a substitute for listening. Use this callback to connect an actual listener when audible feedback matters.
 
 ### Metadata for analysis
 
@@ -91,11 +122,12 @@ Every successful result includes `metadata` without enabling `trace`:
 | `model.provider`, `model.modelId`, `model.settings` | AI SDK model identity and the common reasoning, temperature, and output-token settings used for the run. |
 | `model.usage` | Input, output, total, uncached input, cache read/write, text output, and reasoning tokens. Unreported counters are `null`, never silently zero. `complete` is false if an attempt failed before usage was returned. |
 | `aiSdk.attempts` | AI SDK's own aggregate usage, finish reason, response ID/time/model, provider metadata, and warnings for every completed attempt. Each attempt also includes the same summaries plus performance metrics for each agent step. |
-| `run` | Wall time, model-call time, WAV render time (milliseconds), attempts, agent steps, and tool calls. |
+| `reviews` | Each listener's feedback or acceptance, plus optional model ID and usage if the caller supplies them. |
+| `run` | Wall time, composer model time, WAV render time, review time (milliseconds), composer attempts, revisions, review calls, agent steps, and tool calls. |
 | `renderer` | Renderer ID and version for audio output; `null` for MIDI-only output. |
 | `artifacts` | Requested output type, MIME type, byte count, encoded duration, and WAV format details. |
 
-Usage counters are summed across completed model attempts. Provider billing details may differ; the SDK does not estimate currency cost because prices vary by model and provider. `trace: true` adds proposals, feedback, and tool steps for deeper debugging; those histories are excluded from ordinary metadata and `project`.
+Composer usage counters are summed across completed score attempts. If a caller-supplied reviewer makes model calls, its reported usage appears separately in `metadata.reviews`; add both when analyzing total provider cost. Provider billing details may differ; the SDK does not estimate currency cost because prices vary by model and provider. `trace: true` adds proposals, listening feedback, and tool steps for deeper debugging; score histories are excluded from ordinary metadata and `project`.
 
 `aiSdk` preserves the installed AI SDK's `usage` objects, including any provider `raw` usage, rather than replacing them with only the normalized counters. Response headers, bodies, and generated messages are excluded from ordinary metadata; use the opt-in trace for proposal and tool history. The response timestamp is serialized as an ISO string so the metadata can be saved directly as JSON.
 

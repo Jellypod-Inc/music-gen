@@ -21,7 +21,11 @@ export const MUSIC_MAX_ATTEMPTS = 3;
 export const MUSIC_DEFAULT_MAX_ATTEMPTS = 1;
 export type MusicLength = { mode: 'auto' } | { mode: 'duration'; seconds: number } | { mode: 'bars'; bars: number; bpm?: number };
 export interface MusicEnvironment { tools?: ToolSet }
-export interface GenerateMusicOptions extends Pick<ToolLoopAgentSettings, 'reasoning' | 'providerOptions' | 'temperature' | 'maxOutputTokens'> { prompt: string; model: LanguageModel; output: MusicOutput | MusicOutput[]; scoreFormat?: 'compact' | 'full'; length?: MusicLength; maxDuration?: number; maxAttempts?: number; renderer?: MusicRenderer; environment?: MusicEnvironment; trace?: boolean; abortSignal?: AbortSignal }
+export interface MusicPreview { prompt: string; project: MusicProject; audio: Uint8Array; iteration: number; abortSignal?: AbortSignal }
+export interface MusicReview { feedback: string | null; modelId?: string; usage?: LanguageModelUsage }
+/** Return focused feedback to revise the score, or null to accept the preview. */
+export type MusicReviewer = (preview: MusicPreview) => Promise<MusicReview | string | null>;
+export interface GenerateMusicOptions extends Pick<ToolLoopAgentSettings, 'reasoning' | 'providerOptions' | 'temperature' | 'maxOutputTokens'> { prompt: string; model: LanguageModel; output: MusicOutput | MusicOutput[]; scoreFormat?: 'compact' | 'full'; length?: MusicLength; maxDuration?: number; maxAttempts?: number; maxRevisions?: number; reviewer?: MusicReviewer; renderer?: MusicRenderer; environment?: MusicEnvironment; trace?: boolean; abortSignal?: AbortSignal }
 export interface MusicArtifact { type: MusicOutput; bytes: Uint8Array; mimeType: string; filename: string; format: 'mid' | 'wav' }
 export interface MusicTokenUsage { inputTokens: number | null; outputTokens: number | null; totalTokens: number | null; uncachedInputTokens: number | null; cacheReadTokens: number | null; cacheWriteTokens: number | null; textOutputTokens: number | null; reasoningTokens: number | null; complete: boolean }
 export interface AiSdkStepMetadata {
@@ -41,11 +45,12 @@ export interface MusicMetadata {
   scoreExpansion: { truncatedNotes: number; droppedNotes: number } | null;
   model: { provider: string; modelId: string; settings: { scoreFormat: 'compact' | 'full'; reasoning: ToolLoopAgentSettings['reasoning'] | null; temperature: number | null; maxOutputTokens: number | null }; usage: MusicTokenUsage };
   renderer: { id: string; version: string } | null;
+  reviews: Array<{ modelId: string | null; usage: LanguageModelUsage | null; feedback: string | null }>;
   aiSdk: { attempts: AiSdkAttemptMetadata[] };
-  run: { elapsedMs: number; modelMs: number; renderMs: number; attempts: number; steps: number; toolCalls: number };
+  run: { elapsedMs: number; modelMs: number; renderMs: number; reviewMs: number; attempts: number; revisions: number; reviewCalls: number; steps: number; toolCalls: number };
   artifacts: Array<{ type: MusicOutput; bytes: number; mimeType: string; durationSeconds: number; sampleRate?: number; channels?: number; bitDepth?: number }>;
 }
-export interface MusicTrace { proposals: unknown[]; proposalAttempts: number[]; feedback: string[]; steps: unknown[] }
+export interface MusicTrace { proposals: unknown[]; proposalAttempts: number[]; feedback: string[]; reviews: Array<{ attempt: number; feedback: string | null }>; steps: unknown[] }
 export interface MusicResult { outputs: MusicArtifact[]; project: MusicProject; metadata: MusicMetadata; trace?: MusicTrace }
 export interface MusicFailureDiagnostics { usage: MusicTokenUsage; attempts: number; elapsedMs: number; aiSdk: { attempts: AiSdkAttemptMetadata[] }; trace?: MusicTrace }
 export class MusicGenerationError extends Error {
@@ -81,6 +86,9 @@ function checkOptions(o: GenerateMusicOptions): MusicOutput[] {
   if (l?.mode === 'duration' && o.maxDuration !== undefined && l.seconds > o.maxDuration) throw new RangeError('duration exceeds maxDuration');
   if (l?.mode === 'bars' && l.bpm && o.maxDuration !== undefined && l.bars * 60 / l.bpm > o.maxDuration) throw new RangeError('bars cannot fit maxDuration even with a one-quarter-note bar');
   if (o.maxAttempts !== undefined && (!Number.isInteger(o.maxAttempts) || o.maxAttempts < 1 || o.maxAttempts > MUSIC_MAX_ATTEMPTS)) throw new RangeError(`maxAttempts must be 1–${MUSIC_MAX_ATTEMPTS}`);
+  if (o.maxRevisions !== undefined && (!Number.isInteger(o.maxRevisions) || o.maxRevisions < 0 || o.maxRevisions > 3)) throw new RangeError('maxRevisions must be 0–3');
+  if (o.reviewer && !outputs.includes('audio')) throw new TypeError('audio output is required for a reviewer');
+  if (o.maxRevisions && !o.reviewer) throw new TypeError('maxRevisions requires a reviewer');
   if (o.scoreFormat !== undefined && o.scoreFormat !== 'compact' && o.scoreFormat !== 'full') throw new TypeError('scoreFormat must be compact or full');
   return outputs;
 }
@@ -93,18 +101,23 @@ export async function generateMusic(options: GenerateMusicOptions): Promise<Musi
   const needsPatch = renderer === builtinRenderer;
   const scoreFormat = options.scoreFormat ?? 'compact';
   const scoreOutput = scoreFormat === 'compact' ? Output.object({ schema: compactGenerationSchema }) : Output.object({ schema: audio ? projectSchema : projectSchema.extend({ tracks: z.array(trackSchema.omit({ patch: true })).min(1).max(32) }) });
-  const trace: MusicTrace = { proposals: [], proposalAttempts: [], feedback: [], steps: [] };
+  const trace: MusicTrace = { proposals: [], proposalAttempts: [], feedback: [], reviews: [], steps: [] };
   const maxAttempts = options.maxAttempts ?? MUSIC_DEFAULT_MAX_ATTEMPTS;
+  const maxRevisions = options.reviewer ? options.maxRevisions ?? 1 : 0;
   let feedback = '';
+  let revisionScore: unknown;
+  let revisions = 0, repairs = 0, reviewCalls = 0;
   const usage: MusicTokenUsage = { inputTokens: null, outputTokens: null, totalTokens: null, uncachedInputTokens: null, cacheReadTokens: null, cacheWriteTokens: null, textOutputTokens: null, reasoningTokens: null, complete: true };
   const aiSdkAttempts: AiSdkAttemptMetadata[] = [];
-  let modelMs = 0, renderMs = 0, steps = 0, toolCalls = 0;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+  const reviews: MusicMetadata['reviews'] = [];
+  let modelMs = 0, renderMs = 0, reviewMs = 0, steps = 0, toolCalls = 0;
+  for (let attempt = 0; attempt < maxAttempts + maxRevisions; attempt++) {
     if (options.abortSignal?.aborted) throw options.abortSignal.reason ?? new Error('aborted');
     const tools = options.environment?.tools;
     let modelResultReceived = false;
     let modelStarted = 0;
     let rendererStarted = false;
+    let reviewerStarted = false;
     try {
       const constraint = options.length?.mode === 'duration' ? `Target exactly ${options.length.seconds} seconds; choose bars and BPM that produce this duration.` : options.length?.mode === 'bars' ? `Use exactly ${options.length.bars} bars${options.length.bpm ? ` at exactly ${options.length.bpm} BPM` : ''}.` : 'Choose a musically suitable length.';
       modelStarted = performance.now();
@@ -115,9 +128,9 @@ export async function generateMusic(options: GenerateMusicOptions): Promise<Musi
       temperature: options.temperature,
       maxOutputTokens: options.maxOutputTokens,
       instructions: scoreFormat === 'compact'
-        ? 'Compose a multitrack score in the compact schema. Follow the prompt for the musical material. Choose the tracks and instruments the prompt needs; there is no fixed arrangement. Meter is a string such as "4/4". Each track patterns array contains objects like {"id":"A","notes":["0,60,1,90"]}. Each note string is "beatOffset,MIDIpitch,durationBeats,velocity". Each play string is "patternId,zeroBasedStartBar,transposeSemitones" such as "A,4,0"; its patternId must match an id in that track patterns array. Beat offsets use quarter-note beats from the placement bar. Reuse short patterns across bars and vary placements where musical. For instruments, choose a sound preset or use sound "custom" with a voice such as {"wave":"square","dutyCycle":0.25,"attack":0.01,"release":0.1,"gain":0.2}; role, program, and percussion are optional track/voice choices. Use pitched sounds for melodic tracks unless a noise texture is intentional. Percussion transposition must be zero. Keep every expanded note inside the score. Return the compact score once.'
-        : `Compose a multitrack score. Follow the prompt for the musical material. Notes use quarter-note beats from zero and must end within the score. Program is a zero-based General MIDI hint; percussion uses channel 10. ${needsPatch ? 'Give each track a bounded synth patch.' : 'Omit synth patches unless they help express the intended sound.'} Return the complete score once as structured output.`,
-      prompt: `${options.prompt}\n${constraint}${options.maxDuration ? `\nHard maximum duration: ${options.maxDuration} seconds.` : ''}${feedback ? `\n${feedback}` : ''}`,
+        ? 'Compose the requested music as a compact multitrack score. Choose the tracks and instruments yourself. Notes are "beat,pitch,duration,velocity"; placements are "patternId,startBar,transpose". Beats are quarter notes. Keep notes within the score.'
+        : `Compose the requested music as a multitrack score. Choose the tracks and instruments yourself. Notes use quarter-note beats from zero. ${needsPatch ? 'Include a synth patch on each track.' : ''}`,
+      prompt: `${options.prompt}\n${constraint}${options.maxDuration ? `\nHard maximum duration: ${options.maxDuration} seconds.` : ''}${feedback ? `\n${feedback}` : ''}${revisionScore ? `\nPrevious score to revise:\n${JSON.stringify(revisionScore)}` : ''}`,
       ...(tools ? { tools, stopWhen: isStepCount(MUSIC_AGENT_STEPS_PER_ATTEMPT) } : {}),
       output: scoreOutput,
       abortSignal: options.abortSignal,
@@ -170,6 +183,24 @@ export async function generateMusic(options: GenerateMusicOptions): Promise<Musi
       renderMs += performance.now() - renderStarted;
       const wav = rendered?.bytes;
       const wavInfo = rendered?.info;
+      if (options.reviewer) {
+        reviewerStarted = true;
+        const reviewStarted = performance.now();
+        const review = await options.reviewer({ prompt: options.prompt, project: p, audio: wav!, iteration: reviewCalls + 1, abortSignal: options.abortSignal });
+        reviewMs += performance.now() - reviewStarted;
+        reviewerStarted = false;
+        reviewCalls++;
+        const reviewFeedback = typeof review === 'string' || review === null ? review : review.feedback;
+        reviews.push({ modelId: typeof review === 'object' && review !== null ? review.modelId ?? null : null, usage: typeof review === 'object' && review !== null ? review.usage ?? null : null, feedback: reviewFeedback });
+        if (options.trace) trace.reviews.push({ attempt: attempt + 1, feedback: reviewFeedback });
+        if (reviewFeedback?.trim() && revisions < maxRevisions) {
+          revisions++;
+          revisionScore = result.output;
+          feedback = `Audio review of the rendered preview: ${reviewFeedback.trim()} Revise the previous score and return the complete score.`;
+          if (options.trace) trace.feedback.push(feedback);
+          continue;
+        }
+      }
       const artifacts: MusicArtifact[] = outputs.map(type => type === 'midi' ? { type, bytes: midi.bytes, mimeType: 'audio/midi', filename: 'composition.mid', format: 'mid' } : { type, bytes: wav!, mimeType: 'audio/wav', filename: 'composition.wav', format: 'wav' });
       const modelId = typeof options.model === 'string' ? options.model : options.model.modelId;
       const provider = typeof options.model === 'string' ? modelId.split('/')[0] : options.model.provider;
@@ -181,18 +212,23 @@ export async function generateMusic(options: GenerateMusicOptions): Promise<Musi
         scoreExpansion: expansion ? { truncatedNotes: expansion.truncatedNotes, droppedNotes: expansion.droppedNotes } : null,
         model: { provider, modelId, settings: { scoreFormat, reasoning: options.reasoning ?? null, temperature: options.temperature ?? null, maxOutputTokens: options.maxOutputTokens ?? null }, usage },
         renderer: renderer ? { id: renderer.id, version: renderer.version } : null,
+        reviews,
         aiSdk: { attempts: aiSdkAttempts },
-        run: { elapsedMs: performance.now() - started, modelMs, renderMs, attempts: attempt + 1, steps, toolCalls },
+        run: { elapsedMs: performance.now() - started, modelMs, renderMs, reviewMs, attempts: attempt + 1, revisions, reviewCalls, steps, toolCalls },
         artifacts: artifacts.map(a => ({ type: a.type, bytes: a.bytes.length, mimeType: a.mimeType, durationSeconds: a.type === 'audio' ? actualDurationSeconds : midi.encodedSeconds, ...(a.type === 'audio' ? { sampleRate: wavInfo!.sampleRate, channels: wavInfo!.channels, bitDepth: wavInfo!.bitDepth } : {}) })),
       };
       return { outputs: artifacts, project: p, metadata, ...(options.trace ? { trace } : {}) };
     } catch (error) {
       if (!modelResultReceived) { usage.complete = false; if (modelStarted) modelMs += performance.now() - modelStarted; }
       if (options.abortSignal?.aborted) throw options.abortSignal.reason ?? error;
+      if (reviewerStarted) throw new MusicGenerationError(`audio reviewer failed: ${String(error)}`, { usage, attempts: attempt + 1, elapsedMs: performance.now() - started, aiSdk: { attempts: aiSdkAttempts }, ...(options.trace ? { trace } : {}) }, { cause: error });
       if (rendererStarted) throw new MusicGenerationError(`audio renderer ${renderer!.id} failed: ${String(error)}`, { usage, attempts: attempt + 1, elapsedMs: performance.now() - started, aiSdk: { attempts: aiSdkAttempts }, ...(options.trace ? { trace } : {}) }, { cause: error });
+      if (repairs >= maxAttempts - 1) throw new MusicGenerationError(`music generation failed after ${attempt + 1} attempt${attempt ? 's' : ''}: ${String(error)}`, { usage, attempts: attempt + 1, elapsedMs: performance.now() - started, aiSdk: { attempts: aiSdkAttempts }, ...(options.trace ? { trace } : {}) }, { cause: error });
+      repairs++;
+      revisionScore = undefined;
       feedback = `Previous proposal failed independent validation: ${String(error)}. Produce a corrected complete score.`;
       if (options.trace) trace.feedback.push(feedback);
     }
   }
-  throw new MusicGenerationError(`music generation failed after ${maxAttempts} attempt${maxAttempts === 1 ? '' : 's'}: ${feedback}`, { usage, attempts: maxAttempts, elapsedMs: performance.now() - started, aiSdk: { attempts: aiSdkAttempts }, ...(options.trace ? { trace } : {}) });
+  throw new MusicGenerationError('music generation ended without a final score', { usage, attempts: aiSdkAttempts.length, elapsedMs: performance.now() - started, aiSdk: { attempts: aiSdkAttempts }, ...(options.trace ? { trace } : {}) });
 }

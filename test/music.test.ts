@@ -209,6 +209,38 @@ test('AI SDK metadata retains each completed repair attempt', async () => {
   assert.equal(result.metadata.aiSdk.attempts[1].response.modelId, 'mock-model-id');
 });
 
+test('audio feedback causes a revision of the previous score and records both passes', async () => {
+  const revised = { ...compact, tracks: [{ ...compact.tracks[0], patterns: [{ id: 'A', notes: ['0,67,1,95'] }], play: ['A,0,0'] }] };
+  const model = new MockLanguageModelV4({ doGenerate: [mockResult(compact), mockResult(revised)] });
+  let heard = 0;
+  const result = await generateMusic({
+    prompt: 'A short bright melody', model, output: ['midi', 'audio'], maxRevisions: 1, trace: true,
+    reviewer: async ({ audio, project, iteration }) => {
+      heard++;
+      assert.equal(iteration, heard);
+      assert.equal(project.tracks[0].notes[0].pitch, heard === 1 ? 60 : 67);
+      assert.equal(inspectWav(audio).frames, 4 * 4 * 44100 * 60 / 120);
+      return heard === 1 ? 'The lead needs a brighter opening pitch.' : null;
+    },
+  });
+  assert.equal(heard, 2);
+  assert.equal(result.project.tracks[0].notes[0].pitch, 67);
+  assert.equal(result.metadata.run.revisions, 1);
+  assert.equal(result.metadata.run.reviewCalls, 2);
+  assert.equal(result.metadata.run.attempts, 2);
+  assert.equal(result.trace?.proposals.length, 2);
+  assert.equal(result.trace?.reviews[0].feedback, 'The lead needs a brighter opening pitch.');
+  assert.equal(result.trace?.reviews[1].feedback, null);
+  assert.match(JSON.stringify(model.doGenerateCalls[1].prompt), /The lead needs a brighter opening pitch/);
+  assert.match(JSON.stringify(model.doGenerateCalls[1].prompt), /Previous score to revise/);
+});
+
+test('reviewer errors stop without another paid composition call', async () => {
+  const model = mock(compact);
+  await assert.rejects(generateMusic({ prompt: 'test', model, output: 'audio', reviewer: async () => { throw new Error('audio route unavailable'); }, maxAttempts: 3 }), /audio reviewer failed/);
+  assert.equal(model.doGenerateCalls.length, 1);
+});
+
 test('independent score validator and writers reject out-of-range notes', () => {
   assert.throws(() => validateProject({ ...score, tracks: [{ ...score.tracks[0], notes: [{ start: 59, duration: 2, pitch: 60, velocity: 100 }] }] }, true), /outside score/);
   const p = validateProject(score, true);
