@@ -182,7 +182,8 @@ function composition({ documentTitle, details, logo, tracks, start, duration, as
   const hasPrompt = Boolean(details.prompt);
   const rollTop = vertical ? (hasPrompt ? 720 : 330) : (hasPrompt ? 350 : 160);
   const rollHeight = (vertical ? 1860 : 1025) - rollTop;
-  const laneHeight = rollHeight / tracks.length;
+  const laneGap = Math.min(vertical ? 12 : 10, rollHeight / tracks.length * 0.2);
+  const laneHeight = (rollHeight - laneGap * (tracks.length - 1)) / tracks.length;
   const rollLeft = pad + labelWidth, rollWidth = width - rollLeft - pad;
   const now = vertical ? 92 : 138;
   const speed = Math.max(vertical ? 165 : 190, (rollWidth - now - 25) / duration);
@@ -192,22 +193,27 @@ function composition({ documentTitle, details, logo, tracks, start, duration, as
   const nowTravel = (duration - scrollTime) * speed;
   const sheetWidth = Math.ceil(rollWidth + travel + now);
   const noteBars = [];
+  const rollRows = [];
   const laneRows = tracks.map((track, i) => {
     const color = colors[i % colors.length];
+    const rowTop = i * (laneHeight + laneGap);
+    rollRows.push(`<div class="roll-lane" style="top:${rowTop.toFixed(1)}px;height:${laneHeight.toFixed(1)}px"></div>`);
     const excerptNotes = track.notes.filter(note => note.end > start && note.start < start + duration);
     const pitches = excerptNotes.map(n => n.pitch);
     const low = Math.min(...pitches), high = Math.max(...pitches);
     const range = Math.max(7, high - low);
-    const noteHeight = Math.max(3, Math.min(14, laneHeight / 6));
-    const topInset = Math.min(i === 0 ? 32 : 14, Math.max(4, laneHeight - noteHeight - 4));
+    const noteHeight = Math.max(3, Math.min(vertical ? 7 : 5, laneHeight / 9));
+    const topInset = Math.min(i === 0 ? 30 : 12, Math.max(3, laneHeight - noteHeight - 4));
     for (const note of excerptNotes) {
       const noteStart = Math.max(0, note.start - start), noteEnd = Math.min(duration, note.end - start);
       if (noteEnd <= noteStart) continue;
       const x = now + noteStart * speed;
-      const y = i * laneHeight + topInset + (high - note.pitch) / range * Math.max(0, laneHeight - topInset - noteHeight - 4);
-      noteBars.push(`<div class="note" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${Math.max(4, (noteEnd - noteStart) * speed).toFixed(1)}px;height:${noteHeight.toFixed(1)}px;background:${color};opacity:${(0.76 + note.velocity / 127 * 0.24).toFixed(2)}"></div>`);
+      const y = rowTop + topInset + (high - note.pitch) / range * Math.max(0, laneHeight - topInset - noteHeight - 4);
+      const width = (noteEnd - noteStart) * speed;
+      const visibleWidth = width < 4 ? Math.max(0.5, width) : width - Math.min(6, Math.max(2, width * 0.08));
+      noteBars.push(`<div class="note" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${visibleWidth.toFixed(1)}px;height:${noteHeight.toFixed(1)}px;background:${color};opacity:${(0.76 + note.velocity / 127 * 0.24).toFixed(2)}"></div>`);
     }
-    return `<div class="lane" style="top:${(i * laneHeight).toFixed(1)}px;height:${laneHeight.toFixed(1)}px"><span class="swatch" style="background:${color}"></span><span class="lane-name">${escapeHtml(track.name)}</span></div>`;
+    return `<div class="lane" style="top:${rowTop.toFixed(1)}px;height:${laneHeight.toFixed(1)}px"><span class="swatch" style="background:${color}"></span><span class="lane-name">${escapeHtml(track.name)}</span></div>`;
   });
   const grid = Array.from({ length: Math.ceil(duration) + 1 }, (_, second) => `<div class="tick" style="left:${(now + second * speed).toFixed(1)}px"><span>${String(Math.floor(start + second)).padStart(2, '0')}s</span></div>`).join('');
   const metric = (label, value, detail = '') => `<div class="metric"><span class="metric-label">${label}</span><strong>${escapeHtml(value)}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</div>`;
@@ -222,22 +228,23 @@ function composition({ documentTitle, details, logo, tracks, start, duration, as
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=${width},height=${height}"><title>${escapeHtml(documentTitle)}</title>
 <style>
-  *{box-sizing:border-box}html,body{margin:0;width:${width}px;height:${height}px;overflow:hidden;background:#111315;color:#f5f5f3;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif}
+  *{box-sizing:border-box}html,body{margin:0;width:${width}px;height:${height}px;overflow:hidden;background:#111315;color:#f5f5f3;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
   #stage{position:relative;width:${width}px;height:${height}px;overflow:hidden;background:#111315}
   .prompt-label{position:absolute;top:${vertical ? 72 : 45}px;left:${pad}px;color:#9da2a5;font-size:13px;font-weight:600;letter-spacing:2px}
-  .prompt{position:absolute;top:${vertical ? 108 : 76}px;left:${pad}px;right:${pad}px;max-height:${vertical ? 345 : 155}px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${vertical ? 11 : 5};font-size:25px;line-height:31px;font-weight:500;color:#f5f5f3}
+  .prompt{position:absolute;top:${vertical ? 108 : 76}px;left:${pad}px;right:${pad}px;max-height:${vertical ? 345 : 155}px;overflow:hidden;font-size:25px;line-height:31px;font-weight:500;color:#f5f5f3}
   .metrics{position:absolute;top:${vertical ? (hasPrompt ? 470 : 75) : (hasPrompt ? 252 : 64)}px;left:${pad}px;right:${pad}px;display:grid;grid-template-columns:${vertical ? 'repeat(2,minmax(0,1fr))' : '2fr 1.15fr 1.25fr 1fr .7fr'};column-gap:${vertical ? 28 : 24}px;row-gap:8px}
   .metric{min-width:0;min-height:${vertical ? 66 : 69}px;padding:10px 0 0;border-top:1px solid #3b3e41;overflow:hidden}
   .metric.wide{${vertical ? 'grid-column:span 2;' : ''}}.metric-label{display:block;color:#92989c;font-size:12px;letter-spacing:1.5px;font-weight:600;margin-bottom:7px}.metric strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:${vertical ? 23 : 22}px;line-height:26px;font-weight:600}.metric small{display:block;color:#a4aaad;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
   .model-value{display:flex;align-items:center;gap:12px;min-width:0}.model-icon{display:flex;flex:none;width:25px;height:25px;color:#f5f5f3}.model-icon svg{width:100%;height:100%}
-  .roll-frame{position:absolute;left:${rollLeft}px;top:${rollTop}px;width:${rollWidth}px;height:${rollHeight}px;overflow:hidden;border-top:1px solid #44484b;border-bottom:1px solid #44484b;background:#1a1d20;background-image:linear-gradient(to bottom,transparent calc(100% - 1px),#303438 calc(100% - 1px));background-size:100% ${laneHeight}px}
-  .lanes{position:absolute;left:${pad}px;top:${rollTop}px;width:${labelWidth}px;height:${rollHeight}px;border-top:1px solid #44484b;border-bottom:1px solid #44484b;background:#171a1d}
-  .lane{position:absolute;left:0;right:0;border-bottom:1px solid #303438;padding:0 16px;overflow:hidden;display:flex;align-items:center}
+  .roll-frame{position:absolute;left:${rollLeft}px;top:${rollTop}px;width:${rollWidth}px;height:${rollHeight}px;overflow:hidden;background:#111315}
+  .roll-lane{position:absolute;left:0;right:0;background:#1a1d20}
+  .lanes{position:absolute;left:${pad}px;top:${rollTop}px;width:${labelWidth}px;height:${rollHeight}px;background:#111315}
+  .lane{position:absolute;left:0;right:0;background:#171a1d;padding:0 16px;overflow:hidden;display:flex;align-items:center}
   .swatch{display:block;flex:none;width:5px;height:25px;margin-right:15px;border-radius:2px}.lane-name{display:block;font-size:${vertical ? 20 : 18}px;font-weight:500;color:#d9dcdd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .roll{position:absolute;left:0;top:0;width:${sheetWidth}px;height:100%;animation:scroll-roll ${duration}s linear both}
   @keyframes scroll-roll{0%{transform:translateX(0)}${scrollPercent}%{transform:translateX(-${travel}px)}100%{transform:translateX(-${travel}px)}}
   .tick{position:absolute;top:0;bottom:0;width:1px;background:#34383c}.tick span{position:absolute;left:8px;top:12px;color:#8d9397;font-size:13px;font-weight:500;letter-spacing:.5px}
-  .note{position:absolute;border-radius:2px}
+  .note{position:absolute;border-radius:1px}
   .now{position:absolute;left:${now}px;top:0;bottom:0;width:2px;background:#f5f5f3;z-index:4;animation:move-now ${duration}s linear both}
   @keyframes move-now{0%{transform:translateX(0)}${scrollPercent}%{transform:translateX(0)}100%{transform:translateX(${nowTravel}px)}}
   @media (prefers-reduced-motion:reduce){.roll,.now{animation:none}}
@@ -246,9 +253,63 @@ function composition({ documentTitle, details, logo, tracks, start, duration, as
   ${hasPrompt ? `<div class="prompt-label">PROMPT</div><div class="prompt">${escapeHtml(details.prompt)}</div>` : ''}
   <div class="metrics">${metrics}</div>
   <div class="lanes">${laneRows.join('')}</div>
-  <div class="roll-frame"><div class="roll">${grid}${noteBars.join('')}</div><div class="now"></div></div>
+  <div class="roll-frame">${rollRows.join('')}<div class="roll">${grid}${noteBars.join('')}</div><div class="now"></div></div>
   <audio id="soundtrack" src="audio.wav" data-start="0" data-duration="${duration}" data-media-start="${start}" data-track-index="10"></audio>
-</div></body></html>`;
+</div>
+<script>
+  // Paint text once so long browser captures cannot lose individual glyphs.
+  function paintText(element) {
+    const text = element.textContent.trim();
+    const { width, height } = element.getBoundingClientRect();
+    if (!text || !width || !height) return;
+    const style = getComputedStyle(element);
+    const fontSize = parseFloat(style.fontSize);
+    const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.2;
+    const scale = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(width * scale);
+    canvas.height = Math.ceil(height * scale);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    canvas.style.display = 'block';
+    const context = canvas.getContext('2d');
+    context.scale(scale, scale);
+    context.font = style.fontWeight + ' ' + style.fontSize + ' ' + style.fontFamily;
+    context.fillStyle = style.color;
+    context.textBaseline = 'alphabetic';
+    if ('letterSpacing' in context) context.letterSpacing = style.letterSpacing;
+    const sample = context.measureText('Mg');
+    const ascent = sample.actualBoundingBoxAscent || fontSize * 0.8;
+    const descent = sample.actualBoundingBoxDescent || fontSize * 0.2;
+    const baseline = (lineHeight - ascent - descent) / 2 + ascent;
+    const fit = (value, ellipsis = false) => {
+      let label = value;
+      const suffix = ellipsis ? '…' : '';
+      while (label && context.measureText(label + suffix).width > width) label = label.slice(0, -1);
+      return label + suffix;
+    };
+    if (element.classList.contains('prompt')) {
+      const lines = [];
+      let line = '';
+      for (const word of text.split(/\\s+/)) {
+        const next = line ? line + ' ' + word : word;
+        if (line && context.measureText(next).width > width) { lines.push(line); line = word; }
+        else line = next;
+      }
+      if (line) lines.push(line);
+      const count = Math.min(lines.length, Math.floor(height / lineHeight));
+      for (let index = 0; index < count; index++) {
+        context.fillText(fit(lines[index], index === count - 1 && lines.length > count), 0, baseline + index * lineHeight);
+      }
+    } else {
+      context.fillText(fit(text, context.measureText(text).width > width), 0, baseline);
+    }
+    element.style.width = width + 'px';
+    element.style.height = height + 'px';
+    element.replaceChildren(canvas);
+  }
+  document.querySelectorAll('.prompt-label,.prompt,.metric-label,.metric strong,.metric small,.lane-name,.tick span').forEach(paintText);
+</script></body></html>`;
 }
 
 async function main() {
