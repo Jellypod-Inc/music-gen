@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { reportResult, writeHtmlReport } from './html.mjs';
+import { reportResult, writeHtmlReport } from './html.ts';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 
@@ -20,7 +20,7 @@ export async function generateShowcase(runDir, manifest, suite) {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const runDir = process.argv[2];
-  if (!runDir) throw new Error('Usage: node evals/showcase.mjs <run-directory>');
+  if (!runDir) throw new Error('Usage: node --import tsx evals/showcase.ts <run-directory>');
   const manifest = JSON.parse(await readFile(join(runDir, 'manifest.json'), 'utf8'));
   const suite = JSON.parse(await readFile(join(here, `suite.v${manifest.suite.version}.json`), 'utf8'));
   await generateShowcase(runDir, manifest, suite);

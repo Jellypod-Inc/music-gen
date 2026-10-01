@@ -2,8 +2,8 @@ import { readFile, mkdir, link, copyFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { makePairs } from './lib.mjs';
-import { reportResult, writeHtmlReport } from './html.mjs';
+import { makePairs } from './lib.ts';
+import { reportResult, writeHtmlReport } from './html.ts';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 export async function generateReport(runDir, manifest, suite) {
@@ -44,7 +44,7 @@ export async function generateReport(runDir, manifest, suite) {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const runDir = process.argv[2];
-  if (!runDir) throw new Error('Usage: node evals/report.mjs <run-directory>');
+  if (!runDir) throw new Error('Usage: node --import tsx evals/report.ts <run-directory>');
   const manifest = JSON.parse(await readFile(join(runDir, 'manifest.json'), 'utf8'));
   const suite = JSON.parse(await readFile(join(here, `suite.v${manifest.suite.version}.json`), 'utf8'));
   await generateReport(runDir, manifest, suite);

@@ -8,7 +8,7 @@ import test from 'node:test';
 import { inspectWav } from '../dist/index.js';
 
 const run = promisify(execFile);
-const cli = new URL('../bin/music-gen-instrumental.mjs', import.meta.url);
+const cli = new URL('../dist/cli.js', import.meta.url);
 
 test('local CLI renders compact score and installs the packaged skill without model credentials', async t => {
   const root = await mkdtemp(join(tmpdir(), 'music-cli-test-'));
@@ -27,7 +27,7 @@ test('local CLI renders compact score and installs the packaged skill without mo
   assert.equal(summary.renderer, 'builtin');
   assert.equal(inspectWav(await readFile(summary.files.audio)).frames, 4 * 44100);
   assert.ok((await readFile(summary.files.midi)).length > 20);
-  assert.equal(JSON.parse(await readFile(summary.files.project)).tracks[0].notes.length, 4);
+  assert.equal(JSON.parse(await readFile(summary.files.project, 'utf8')).tracks[0].notes.length, 4);
 
   const installed = await run(process.execPath, [cli.pathname, 'install-skill', 'claude'], { env });
   assert.equal(installed.stdout.trim(), join(root, '.claude', 'skills', 'music-gen-instrumental', 'SKILL.md'));

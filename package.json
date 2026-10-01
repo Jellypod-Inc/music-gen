@@ -9,7 +9,7 @@
     "url": "git+https://github.com/Jellypod-Inc/music-gen.git"
   },
   "engines": { "node": ">=20" },
-  "bin": { "music-gen-instrumental": "bin/music-gen-instrumental.mjs" },
+  "bin": { "music-gen-instrumental": "dist/cli.js" },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -22,22 +22,21 @@
   },
   "files": [
     "dist",
-    "bin",
     "skills",
-    "examples/*.mjs",
+    "examples/*.ts",
     "README.md",
     "NOTICE",
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node -e \"require('node:fs').chmodSync('dist/cli.js', 0o755)\"",
     "prepare": "npm run build",
-    "test": "npm run build && node --import tsx --test test/*.test.ts test/*.test.mjs evals/*.test.mjs",
-    "test:live": "npm run build && node scripts/live-smoke.mjs",
-    "eval:music": "npm run build && node evals/run.mjs",
-    "visualize": "node tools/visualize.mjs",
+    "test": "npm run build && node --import tsx --test test/*.test.ts evals/*.test.ts",
+    "test:live": "npm run build && node --import tsx scripts/live-smoke.ts",
+    "eval:music": "npm run build && node --import tsx evals/run.ts",
+    "visualize": "node --import tsx tools/visualize.ts",
     "check": "npm test",
-    "lint:changed": "tsc --noEmit -p tsconfig.json && for file in bin/*.mjs evals/*.mjs scripts/*.mjs examples/*.mjs tools/*.mjs; do node --check \"$file\" || exit 1; done"
+    "lint:changed": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.tools.json"
   },
   "dependencies": {
     "ai": "^7.0.124",

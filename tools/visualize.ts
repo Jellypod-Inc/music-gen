@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawnSync } from 'node:child_process';
+import { spawnSync, type SpawnSyncOptions } from 'node:child_process';
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +8,12 @@ import { parseMidi } from 'midi-file';
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const hyperframesVersion = '0.8.105';
 const colors = ['#e9c27e', '#83b9c4', '#d99cab', '#a9a4d7', '#a1c293', '#d8a780', '#90b3d4', '#c9b79a', '#bda1c5', '#8dbdaf', '#d5a196', '#aabdd0'];
+
+type Config = {
+  aspect: 'horizontal' | 'vertical'; start: number; quality: 'draft' | 'standard' | 'high'; projectOnly: boolean;
+  midi: string; audio: string; out: string; duration?: number; metadata?: string; prompt?: string;
+  model?: string; thinking?: string; 'input-tokens'?: number; 'output-tokens'?: number; 'generation-ms'?: number;
+};
 
 function usage() {
   return `Usage: pnpm visualize --midi song.mid [--audio song.wav] [options]
@@ -29,8 +35,8 @@ Options:
   --help                   Show this help`;
 }
 
-function options(argv) {
-  const result = { aspect: 'horizontal', start: 0, quality: 'standard', projectOnly: false };
+function options(argv: string[]): Config {
+  const result: Record<string, any> = { aspect: 'horizontal', start: 0, quality: 'standard', projectOnly: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') { console.log(usage()); process.exit(0); }
@@ -58,12 +64,12 @@ function options(argv) {
   const name = path.basename(result.midi, path.extname(result.midi));
   result.out = path.resolve(result.out ?? path.join(repo, 'out', 'videos', `${name}-${result.aspect}.mp4`));
   if (path.extname(result.out).toLowerCase() !== '.mp4') throw new Error('--out must end in .mp4');
-  return result;
+  return result as Config;
 }
 
-async function generationDetails(config) {
+async function generationDetails(config: Config) {
   const file = path.resolve(config.metadata ?? config.midi.replace(/\.[^.]+$/, '.metadata.json'));
-  let raw = {};
+  let raw: any = {};
   try { raw = JSON.parse(await readFile(file, 'utf8')); }
   catch (error) { if (config.metadata || error.code !== 'ENOENT') throw error; }
   const sdk = raw.metadata ?? raw;
@@ -84,7 +90,7 @@ async function generationDetails(config) {
   };
 }
 
-function run(command, args, extra = {}) {
+function run(command: string, args: string[], extra: { stdio?: SpawnSyncOptions['stdio']; cwd?: string } = {}) {
   const result = spawnSync(command, args, { encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, stdio: extra.stdio ?? 'pipe', cwd: extra.cwd });
   if (result.error) throw new Error(`${command}: ${result.error.message}`);
   if (result.status !== 0) throw new Error(`${command} exited ${result.status}: ${result.stderr || result.stdout || ''}`.trim());
@@ -101,11 +107,11 @@ function secondsFromWav(file) {
   return seconds;
 }
 
-function midiNotes(bytes) {
+function midiNotes(bytes: Uint8Array) {
   const midi = parseMidi(bytes);
   const ppq = midi.header.ticksPerBeat;
   if (!ppq) throw new Error('Only beat-based MIDI files are supported');
-  const tempos = [{ tick: 0, micros: 500000 }];
+  const tempos: Array<{ tick: number; micros: number; seconds?: number }> = [{ tick: 0, micros: 500000 }];
   for (const track of midi.tracks) {
     let tick = 0;
     for (const event of track) {
@@ -132,7 +138,7 @@ function midiNotes(bytes) {
     for (const event of events) {
       tick += event.deltaTime;
       if (event.type === 'trackName') name = event.text;
-      if (event.channel === 9) percussion = true;
+      if ('channel' in event && event.channel === 9) percussion = true;
       if (event.type !== 'noteOn' && event.type !== 'noteOff') continue;
       const key = `${event.channel}:${event.noteNumber}`;
       if (event.type === 'noteOn' && event.velocity > 0) {

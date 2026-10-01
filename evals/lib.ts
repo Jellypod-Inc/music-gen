@@ -1,6 +1,14 @@
 import { createHash } from 'node:crypto';
 import { parseMidi } from 'midi-file';
 
+type ObjectiveExpectations = {
+  durationSeconds?: number;
+  bars?: number;
+  bpm?: number;
+  minNonEmptyTracks?: number;
+  loopBoundaryDiagnostic?: boolean;
+};
+
 export function validateSuite(suite) {
   if (![1, 2, 3, 4].includes(suite.suiteVersion) || !Array.isArray(suite.cases) || suite.cases.length < 12 || suite.cases.length > 20) throw new Error('suite must have a supported version and contain 12–20 cases');
   const ids = new Set();
@@ -78,8 +86,8 @@ function parseMidiStats(bytes) {
   return { format: midi.header.format, tracks: midi.tracks.length, nonEmptyTracks: noteCounts.filter(n => n > 0).length, notes: noteCounts.reduce((a, b) => a + b, 0), noteCounts, ppq, endpointTicks, trackEndTicks, sameEndpoint, durationSeconds: seconds, bpm, bars, meter: meter ? { numerator: meter.numerator, denominator: meter.denominator } : null };
 }
 
-export function inspectArtifacts({ midiBytes, wavBytes, expect = {}, maxDuration }) {
-  const checks = {};
+export function inspectArtifacts({ midiBytes, wavBytes, expect = {}, maxDuration }: { midiBytes?: Uint8Array; wavBytes?: Uint8Array; expect?: ObjectiveExpectations; maxDuration?: number }) {
+  const checks: Record<string, boolean | string> = {};
   let midi = null, wav = null;
   try { midi = parseMidiStats(midiBytes); checks.midiParseable = true; } catch (error) { checks.midiParseable = false; checks.midiError = String(error); }
   try { wav = parseWav(wavBytes); checks.wavParseable = true; } catch (error) { checks.wavParseable = false; checks.wavError = String(error); }
@@ -152,7 +160,7 @@ export function summarizeResults(results) {
   return { overall: group(results), byModel, byCase };
 }
 
-export function makePairs(results, runId) {
+export function makePairs(results: Array<{ caseId: string; sampleIndex: number; status: string; modelId: string; files?: { audio?: string } }>, runId: string) {
   const pairs = [];
   const keys = [...new Set(results.map(r => `${r.caseId}\u0000${r.sampleIndex}`))];
   for (const key of keys) {

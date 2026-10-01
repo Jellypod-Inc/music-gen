@@ -4,10 +4,10 @@ import { randomUUID } from 'node:crypto';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gateway } from 'ai';
-import { BUILTIN_RENDERER_VERSION, MUSIC_DEFAULT_MAX_ATTEMPTS, generateMusic } from '../dist/index.js';
-import { analyzeTrace, estimateCost, gatewayReportedCost, inspectArtifacts, modelSlug, summarizeResults, validateSuite } from './lib.mjs';
-import { generateReport } from './report.mjs';
-import { generateShowcase } from './showcase.mjs';
+import { BUILTIN_RENDERER_VERSION, MUSIC_DEFAULT_MAX_ATTEMPTS, MusicGenerationError, generateMusic } from '../dist/index.js';
+import { analyzeTrace, estimateCost, gatewayReportedCost, inspectArtifacts, modelSlug, summarizeResults, validateSuite } from './lib.ts';
+import { generateReport } from './report.ts';
+import { generateShowcase } from './showcase.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const evalRoot = join(root, 'evals');
@@ -77,7 +77,7 @@ async function runTask(task) {
   const base = { modelId: task.modelId, caseId: c.id, sampleIndex: task.sampleIndex, tags: c.tags, prompt: c.prompt, generation: c.generation, expect: c.expect, status: 'failure' };
   try {
     const result = await generateMusic({ prompt: c.prompt, model: gateway(task.modelId), output: ['midi', 'audio'], scoreFormat: 'compact', maxAttempts: MUSIC_DEFAULT_MAX_ATTEMPTS, ...c.generation, ...(options.reasoning ? { reasoning: options.reasoning } : {}), trace: true, abortSignal: AbortSignal.timeout(CALL_TIMEOUT_MS) });
-    const files = {};
+    const files: Record<string, string> = {};
     const projectPath = join(dir, 'project.json'), metadataPath = join(dir, 'metadata.json');
     await Promise.all([
       ...result.outputs.map(async artifact => {
@@ -99,8 +99,8 @@ async function runTask(task) {
     await record(row);
     console.log(`[${manifest.results.length}/${tasks.length}] ${c.id} ${task.modelId} #${task.sampleIndex}: ${objective.passed ? 'pass' : 'objective issue'} (${Math.round(row.elapsedMs)} ms)`);
   } catch (error) {
-    const diagnostics = error && typeof error === 'object' ? error.diagnostics : undefined;
-    const files = {};
+    const diagnostics = error instanceof MusicGenerationError ? error.diagnostics : undefined;
+    const files: Record<string, string> = {};
     if (options.saveTrace && diagnostics?.trace) { const path = join(dir, 'trace.json'); await writeFile(path, JSON.stringify(diagnostics.trace, null, 2)); files.trace = relative(runDir, path); }
     const row = { ...base, elapsedMs: performance.now() - started, files, error: { name: error?.name ?? 'Error', message: String(error?.message ?? error) }, diagnostics: diagnostics ? { usage: diagnostics.usage, attempts: diagnostics.attempts, aiSdk: diagnostics.aiSdk } : null, planning: analyzeTrace(diagnostics?.trace, null), estimatedCost: diagnostics ? gatewayReportedCost(diagnostics.aiSdk?.attempts) ?? estimateCost(task.modelId, diagnostics.usage, prices) : null };
     await writeFile(join(dir, 'result.json'), JSON.stringify(row, null, 2));

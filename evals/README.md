@@ -41,10 +41,10 @@ A passed objective check says the file met measurable contracts, not that it sou
 
 ## Playback showcase
 
-Open `showcase.html` locally to play every successful take with model identity visible. It groups takes by prompt and shows generation time, audio length, token usage, known cost, note and track counts, objective checks, and failures. Filter by model, prompt, or status. Download the MIDI and project files from each card. Regenerate it without model calls using `node evals/showcase.mjs evals/runs/<run-id>`.
+Open `showcase.html` locally to play every successful take with model identity visible. It groups takes by prompt and shows generation time, audio length, token usage, known cost, note and track counts, objective checks, and failures. Filter by model, prompt, or status. Download the MIDI and project files from each card. Regenerate it without model calls using `node --import tsx evals/showcase.ts evals/runs/<run-id>`.
 
 ## Blind listening report
 
 Open `report.html` locally. It shows the prompt and a side-by-side audio pair with run-seeded random left/right placement. Model names and result tables remain hidden until both **background-music quality** and **prompt adherence** have a left/right/tie/skip vote for every available pair. Votes stay in browser local storage until you click **Export raw votes**; **Import votes** restores a saved vote file for the same run. After voting, reveal model names to see per-prompt results, failures, latency, raw pairwise wins and vote counts, and aggregate results.
 
-Elo is shown separately for quality and adherence only after at least 20 decisive votes and 10 judged votes per model. It uses K=24 and remains provisional; vote counts are always displayed. A smaller sample shows raw wins only. The report can be regenerated from a run manifest with `node evals/report.mjs evals/runs/<run-id>` without model calls. Browser-exported vote files are local and are not uploaded by this static report.
+Elo is shown separately for quality and adherence only after at least 20 decisive votes and 10 judged votes per model. It uses K=24 and remains provisional; vote counts are always displayed. A smaller sample shows raw wins only. The report can be regenerated from a run manifest with `node --import tsx evals/report.ts evals/runs/<run-id>` without model calls. Browser-exported vote files are local and are not uploaded by this static report.

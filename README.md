@@ -105,6 +105,8 @@ The CLI detects your agent; add `-g` to install the skill for all projects. Ask 
 
 ## Development
 
+All tracked executable source is TypeScript. `pnpm build` compiles the SDK and CLI to ignored JavaScript in `dist/`; npm installs those compiled files. Development scripts run from TypeScript with `tsx`.
+
 `pnpm test` runs deterministic SDK and CLI tests. [In-repo evals](evals/README.md) run only when requested because live generations cost money. The package is [Apache 2.0 licensed](LICENSE); no SoundFont or native synth is bundled.
 
 ### Turn a result into a video

@@ -4,8 +4,8 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expandCompactScoreWithStats, renderMusic, validateProject, writeMidi } from '../dist/index.js';
-import { createFluidSynthRenderer } from '../dist/renderers/fluidsynth.js';
+import { expandCompactScoreWithStats, renderMusic, validateProject, writeMidi } from './index.js';
+import { createFluidSynthRenderer } from './renderers/fluidsynth.js';
 
 const packageRoot = fileURLToPath(new URL('../', import.meta.url));
 const help = `music-gen-instrumental
@@ -21,14 +21,14 @@ The built-in renderer needs no external assets. --soundfont uses locally install
 FluidSynth and the SoundFont you supply.
 `;
 
-function option(args, name) {
+function option(args: string[], name: string) {
   const at = args.indexOf(name);
   if (at < 0) return undefined;
   if (!args[at + 1] || args[at + 1].startsWith('--')) throw new Error(`${name} requires a value`);
   return args[at + 1];
 }
 
-async function render(args) {
+async function render(args: string[]) {
   const [source] = args;
   const output = option(args, '--out');
   const soundFont = option(args, '--soundfont');
@@ -62,7 +62,7 @@ async function render(args) {
   process.stdout.write(`${JSON.stringify(summary)}\n`);
 }
 
-async function installSkill(args) {
+async function installSkill(args: string[]) {
   const [client] = args;
   if (!['claude', 'codex'].includes(client) || args.some((arg, index) => index > 0 && arg !== '--force') || args.length > 2) throw new Error('usage: music-gen-instrumental install-skill <claude|codex> [--force]');
   const configRoot = client === 'claude' ? join(homedir(), '.claude') : process.env.CODEX_HOME || join(homedir(), '.codex');

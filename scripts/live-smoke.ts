@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { gateway } from 'ai';
-import { generateMusic } from '../dist/index.js';
+import { generateMusic, type GenerateMusicOptions } from '../dist/index.js';
 
 if (!process.env.AI_GATEWAY_API_KEY) {
   console.error('Set AI_GATEWAY_API_KEY to run the live smoke test.');
@@ -18,7 +18,7 @@ try {
   result = await generateMusic({
     prompt,
     model: gateway(modelId),
-    reasoning: process.env.MUSIC_REASONING || undefined,
+    reasoning: process.env.MUSIC_REASONING as GenerateMusicOptions['reasoning'] | undefined,
     output: ['midi', 'audio'],
     scoreFormat: 'compact',
     length: { mode: 'duration', seconds: 30 },

@@ -4,17 +4,17 @@ import { readFile, writeFile, readdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { renderWav, writeMidi } from '../dist/index.js';
-import { analyzeTrace, estimateCost, gatewayReportedCost, inspectArtifacts, makePairs, summarizeResults, validateSuite } from './lib.mjs';
-import { generateReport } from './report.mjs';
-import { generateShowcase } from './showcase.mjs';
+import { renderWav, writeMidi, type MusicProject } from '../dist/index.js';
+import { analyzeTrace, estimateCost, gatewayReportedCost, inspectArtifacts, makePairs, summarizeResults, validateSuite } from './lib.ts';
+import { generateReport } from './report.ts';
+import { generateShowcase } from './showcase.ts';
 
 const suite = validateSuite(JSON.parse(await readFile(new URL('./suite.v1.json', import.meta.url), 'utf8')));
 const suiteV2 = validateSuite(JSON.parse(await readFile(new URL('./suite.v2.json', import.meta.url), 'utf8')));
 const suiteV3 = validateSuite(JSON.parse(await readFile(new URL('./suite.v3.json', import.meta.url), 'utf8')));
 const suiteV4 = validateSuite(JSON.parse(await readFile(new URL('./suite.v4.json', import.meta.url), 'utf8')));
-const patch = { oscillators: [{ wave: 'sine', level: 1, octave: 0, detuneCents: 0 }], envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.2 }, lowpassHz: 8000, gain: 0.2, pan: 0, reverb: 0 };
-const project = { version: 1, title: 'eval test', bpm: 120, timeSignature: { numerator: 4, denominator: 4 }, bars: 1, tracks: [
+const patch: NonNullable<MusicProject['tracks'][number]['patch']> = { oscillators: [{ wave: 'sine', level: 1, octave: 0, detuneCents: 0 }], envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.2 }, lowpassHz: 8000, gain: 0.2, pan: 0, reverb: 0 };
+const project: MusicProject = { version: 1, title: 'eval test', bpm: 120, timeSignature: { numerator: 4, denominator: 4 }, bars: 1, tracks: [
   { id: 'a', name: 'A', role: 'lead', program: 0, percussion: false, notes: [{ start: 0, duration: 1, pitch: 60, velocity: 90 }], patch },
   { id: 'b', name: 'B', role: 'bass', program: 32, percussion: false, notes: [{ start: 0, duration: 2, pitch: 48, velocity: 80 }], patch },
 ] };
@@ -36,16 +36,16 @@ test('suite is versioned, diverse, and keeps loopability in prompts', () => {
 });
 
 test('dry run plans paid call count without a credential', () => {
-  const { status, stdout, stderr } = spawnSync(process.execPath, ['evals/run.mjs', '--models', 'model/a,model/b', '--samples', '1', '--cases', 'seamless-loop,exact-30-eerie', '--dry-run'], { cwd: new URL('..', import.meta.url), env: { ...process.env, AI_GATEWAY_API_KEY: '' }, encoding: 'utf8' });
+  const { status, stdout, stderr } = spawnSync(process.execPath, ['--import', 'tsx', 'evals/run.ts', '--models', 'model/a,model/b', '--samples', '1', '--cases', 'seamless-loop,exact-30-eerie', '--dry-run'], { cwd: new URL('..', import.meta.url), env: { ...process.env, AI_GATEWAY_API_KEY: '' }, encoding: 'utf8' });
   assert.equal(status, 0, stderr);
   assert.match(stdout, /4 paid calls/);
-  const versioned = spawnSync(process.execPath, ['evals/run.mjs', '--suite', 'v2', '--models', 'model/a,model/b', '--samples', '1', '--cases', 'mario-overworld-theme', '--dry-run'], { cwd: new URL('..', import.meta.url), env: { ...process.env, AI_GATEWAY_API_KEY: '' }, encoding: 'utf8' });
+  const versioned = spawnSync(process.execPath, ['--import', 'tsx', 'evals/run.ts', '--suite', 'v2', '--models', 'model/a,model/b', '--samples', '1', '--cases', 'mario-overworld-theme', '--dry-run'], { cwd: new URL('..', import.meta.url), env: { ...process.env, AI_GATEWAY_API_KEY: '' }, encoding: 'utf8' });
   assert.equal(versioned.status, 0, versioned.stderr);
   assert.match(versioned.stdout, /2 paid calls/);
-  const showcase = spawnSync(process.execPath, ['evals/run.mjs', '--suite', 'v3', '--models', 'model/a,model/b,model/c,model/d', '--samples', '1', '--cases', 'open-ended-showcase-30', '--dry-run'], { cwd: new URL('..', import.meta.url), env: { ...process.env, AI_GATEWAY_API_KEY: '' }, encoding: 'utf8' });
+  const showcase = spawnSync(process.execPath, ['--import', 'tsx', 'evals/run.ts', '--suite', 'v3', '--models', 'model/a,model/b,model/c,model/d', '--samples', '1', '--cases', 'open-ended-showcase-30', '--dry-run'], { cwd: new URL('..', import.meta.url), env: { ...process.env, AI_GATEWAY_API_KEY: '' }, encoding: 'utf8' });
   assert.equal(showcase.status, 0, showcase.stderr);
   assert.match(showcase.stdout, /4 paid calls/);
-  const personality = spawnSync(process.execPath, ['evals/run.mjs', '--suite', 'v4', '--models', 'model/a,model/b,model/c', '--samples', '1', '--cases', 'model-personality-showcase-30', '--reasoning', 'xhigh', '--dry-run'], { cwd: new URL('..', import.meta.url), env: { ...process.env, AI_GATEWAY_API_KEY: '' }, encoding: 'utf8' });
+  const personality = spawnSync(process.execPath, ['--import', 'tsx', 'evals/run.ts', '--suite', 'v4', '--models', 'model/a,model/b,model/c', '--samples', '1', '--cases', 'model-personality-showcase-30', '--reasoning', 'xhigh', '--dry-run'], { cwd: new URL('..', import.meta.url), env: { ...process.env, AI_GATEWAY_API_KEY: '' }, encoding: 'utf8' });
   assert.equal(personality.status, 0, personality.stderr);
   assert.match(personality.stdout, /3 paid calls/);
 });
@@ -86,7 +86,7 @@ test('pricing is optional and summaries retain failures', () => {
   assert.equal(estimateCost('other/model', { inputTokens: 1000, outputTokens: 100 }, prices), null);
   assert.equal(gatewayReportedCost([{ steps: [{ providerMetadata: { gateway: { cost: '0.02' } } }, { providerMetadata: { gateway: { cost: '0.03' } } }] }]).usd, 0.05);
   assert.equal(gatewayReportedCost([{ steps: [{ providerMetadata: {} }] }]), null);
-  const rows = [
+  const rows: Array<{ modelId: string; caseId: string; sampleIndex: number; status: string; elapsedMs: number; objective?: { passed: boolean }; estimatedCost?: { usd: number }; files?: { audio: string }; error?: { message: string } }> = [
     { modelId: 'a', caseId: 'x', sampleIndex: 1, status: 'success', elapsedMs: 100, objective: { passed: true }, estimatedCost: { usd: 0.1 }, files: { audio: 'a.wav' } },
     { modelId: 'b', caseId: 'x', sampleIndex: 1, status: 'failure', elapsedMs: 90, error: { message: 'failed' } },
   ];

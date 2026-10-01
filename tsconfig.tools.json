@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "allowImportingTsExtensions": true,
+    "strict": false
+  },
+  "include": ["evals/**/*.ts", "examples/**/*.ts", "scripts/**/*.ts", "test/cli.test.ts", "tools/**/*.ts"]
+}
