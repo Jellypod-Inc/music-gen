@@ -6,7 +6,7 @@ Generate instrumental music as a score, MIDI, and WAV. Bring an AI SDK model for
 
 **Lanterns Over the Harbor** — an original 60-second piece generated with this SDK.
 
-[▶ Play the WAV in your browser](https://raw.githubusercontent.com/Jellypod-Inc/music-gen-instrumental/main/examples/audio/lanterns-over-the-harbor.wav) · [Download MIDI](examples/audio/lanterns-over-the-harbor.mid)
+[▶ Play the WAV in your browser](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen-instrumental@main/examples/audio/lanterns-over-the-harbor.wav) · [Download WAV](examples/audio/lanterns-over-the-harbor.wav) · [MIDI](examples/audio/lanterns-over-the-harbor.mid)
 
 Prompt used for this run:
 
