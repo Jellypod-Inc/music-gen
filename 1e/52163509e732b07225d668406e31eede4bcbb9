@@ -1,0 +1,39 @@
+examples/showcase/index.html
+  s_fcc69843803ae0::t_b2ec1b3e0bfcce 1-71
+examples/showcase/README.md
+  s_fcc69843803ae0::t_60635dca36bb78 1-9
+evals/lib.mjs
+  s_fcc69843803ae0::t_a9ad9d2e182263 5
+evals/lib.test.mjs
+  s_fcc69843803ae0::t_a9ad9d2e182263 14,29-31,41-43
+README.md
+  s_fcc69843803ae0::t_ff76bc59531754 15-30
+  s_fcc69843803ae0::t_769fcd25a69f7e 121
+evals/README.md
+  s_fcc69843803ae0::t_ff76bc59531754 23
+  s_fcc69843803ae0::t_769fcd25a69f7e 3,21-22,26
+tools/visualize.mjs
+  s_fcc69843803ae0::t_41451202f34ca2 170-171
+evals/suite.v3.json
+  s_fcc69843803ae0::t_5a1828e775f856 1-353
+evals/run.mjs
+  s_fcc69843803ae0::t_a9ad9d2e182263 30,36
+tools/logos/grok.svg
+  s_fcc69843803ae0::t_7f41eb0251fbc3 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1e52163509e732b07225d668406e31eede4bcbb9",
+  "prompts": {},
+  "sessions": {
+    "s_fcc69843803ae0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f451-5622-76e1-9321-8cd8ff5a1694",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Pierson Marks <pierson@jellypod.ai>"
+    }
+  }
+}
