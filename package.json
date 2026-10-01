@@ -24,7 +24,7 @@
     "dist",
     "bin",
     "skills",
-    "examples",
+    "examples/*.mjs",
     "README.md",
     "NOTICE",
     "LICENSE"
