@@ -167,8 +167,8 @@ async function modelLogo(modelId) {
   if (!modelId) return '';
   const id = modelId.toLowerCase();
   const provider = id.split('/')[0];
-  const logos = { anthropic: 'claude', openai: 'openai', google: 'gemini', alibaba: 'qwen', qwen: 'qwen', moonshotai: 'kimi', moonshot: 'kimi' };
-  const name = logos[provider] ?? ['claude', 'gemini', 'qwen', 'kimi', 'gpt'].find(family => id.includes(family));
+  const logos = { anthropic: 'claude', openai: 'openai', google: 'gemini', spacexai: 'grok', xai: 'grok', alibaba: 'qwen', qwen: 'qwen', moonshotai: 'kimi', moonshot: 'kimi' };
+  const name = logos[provider] ?? ['claude', 'gemini', 'grok', 'qwen', 'kimi', 'gpt'].find(family => id.includes(family));
   if (!name) return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>';
   return readFile(path.join(repo, 'tools', 'logos', `${name === 'gpt' ? 'openai' : name}.svg`), 'utf8');
 }

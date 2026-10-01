@@ -11,6 +11,7 @@ import { generateShowcase } from './showcase.mjs';
 
 const suite = validateSuite(JSON.parse(await readFile(new URL('./suite.v1.json', import.meta.url), 'utf8')));
 const suiteV2 = validateSuite(JSON.parse(await readFile(new URL('./suite.v2.json', import.meta.url), 'utf8')));
+const suiteV3 = validateSuite(JSON.parse(await readFile(new URL('./suite.v3.json', import.meta.url), 'utf8')));
 const patch = { oscillators: [{ wave: 'sine', level: 1, octave: 0, detuneCents: 0 }], envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.2 }, lowpassHz: 8000, gain: 0.2, pan: 0, reverb: 0 };
 const project = { version: 1, title: 'eval test', bpm: 120, timeSignature: { numerator: 4, denominator: 4 }, bars: 1, tracks: [
   { id: 'a', name: 'A', role: 'lead', program: 0, percussion: false, notes: [{ start: 0, duration: 1, pitch: 60, velocity: 90 }], patch },
@@ -25,6 +26,9 @@ test('suite is versioned, diverse, and keeps loopability in prompts', () => {
   assert.throws(() => validateSuite({ ...suite, cases: [...suite.cases.slice(0, -1), suite.cases[0]] }), /duplicate/);
   assert.equal(suiteV2.cases.length, 17);
   assert.match(suiteV2.cases.at(-1).prompt, /Super Mario Bros/);
+  assert.equal(suiteV3.cases.length, 18);
+  assert.equal(suiteV3.cases.at(-1).id, 'open-ended-showcase-30');
+  assert.equal(suiteV3.cases.at(-1).generation.length.seconds, 30);
 });
 
 test('dry run plans paid call count without a credential', () => {
@@ -34,6 +38,9 @@ test('dry run plans paid call count without a credential', () => {
   const versioned = spawnSync(process.execPath, ['evals/run.mjs', '--suite', 'v2', '--models', 'model/a,model/b', '--samples', '1', '--cases', 'mario-overworld-theme', '--dry-run'], { cwd: new URL('..', import.meta.url), env: { ...process.env, AI_GATEWAY_API_KEY: '' }, encoding: 'utf8' });
   assert.equal(versioned.status, 0, versioned.stderr);
   assert.match(versioned.stdout, /2 paid calls/);
+  const showcase = spawnSync(process.execPath, ['evals/run.mjs', '--suite', 'v3', '--models', 'model/a,model/b,model/c,model/d', '--samples', '1', '--cases', 'open-ended-showcase-30', '--dry-run'], { cwd: new URL('..', import.meta.url), env: { ...process.env, AI_GATEWAY_API_KEY: '' }, encoding: 'utf8' });
+  assert.equal(showcase.status, 0, showcase.stderr);
+  assert.match(showcase.stdout, /4 paid calls/);
 });
 
 test('artifact analysis reads independent MIDI and WAV facts', () => {

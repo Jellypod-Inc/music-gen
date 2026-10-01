@@ -1,6 +1,6 @@
 # In-repo music evals
 
-The hand-written, versioned [`suite.v1.json`](suite.v1.json) has 16 cases covering mood, rhythm, sparse and dense arrangements, contrasting sections, crossed constraints, auto length, exact 30- and 40-second durations, bar/BPM control, and a seamless-loop request in the **prompt**. [`suite.v2.json`](suite.v2.json) preserves those cases and adds a 30-second Super Mario Bros. overworld theme recreation prompt. Each case carries tags, generation options, objective expectations where measurable, and a listening rubric. Neither suite uses an automated mood or music-quality judge.
+The hand-written, versioned [`suite.v1.json`](suite.v1.json) has 16 cases covering mood, rhythm, sparse and dense arrangements, contrasting sections, crossed constraints, auto length, exact 30- and 40-second durations, bar/BPM control, and a seamless-loop request in the **prompt**. [`suite.v2.json`](suite.v2.json) adds a 30-second Super Mario Bros. overworld theme recreation prompt. [`suite.v3.json`](suite.v3.json) adds an open-ended 30-second showcase prompt. Each case carries tags, generation options, objective expectations where measurable, and a listening rubric. No suite uses an automated mood or music-quality judge.
 
 ## Run
 
@@ -18,9 +18,12 @@ pnpm eval:music --models anthropic/claude-sonnet-5.5,provider/other-model --samp
 
 # Focused version 2 reference-theme comparison.
 pnpm eval:music --suite v2 --models alibaba/qwen3.8-max,google/gemini-3.8-flash --samples 1 --cases mario-overworld-theme
+
+# Four-model 30-second showcase: one prompt and one take per model.
+pnpm eval:music --suite v3 --models spacexai/grok-4.3,anthropic/claude-opus-5.5,google/gemini-3.8-flash,openai/gpt-6.1-sol --samples 1 --cases open-ended-showcase-30
 ```
 
-`--models` accepts comma-separated or space-separated IDs. Default suite: v1; `--suite v2` selects the 17-case version. Default samples: 3. Default concurrency: 2; `--concurrency` accepts 1–4. `--reasoning high` applies the same AI SDK reasoning setting to every model; a provider may reject unsupported levels, which are recorded as failures. `--save-trace` persists raw proposal traces. Trace is collected in memory for planning metrics even when it is not saved. `--cases id1,id2` selects a subset. The CLI prints the planned paid-call count before dispatch and starts only through this explicit command. It always calls the SDK's public `generateMusic` with both MIDI and audio, the compact pattern format, one structured model step and no tools, one attempt, and the same renderer and audio format for every model. A case's prompt and length settings are identical across models.
+`--models` accepts comma-separated or space-separated IDs. Default suite: v1; `--suite v2` selects 17 cases and `--suite v3` selects 18. Default samples: 3. Default concurrency: 2; `--concurrency` accepts 1–4. `--reasoning high` applies the same AI SDK reasoning setting to every model; a provider may reject unsupported levels, which are recorded as failures. Omitting it leaves reasoning at each provider's default. `--save-trace` persists raw proposal traces. Trace is collected in memory for planning metrics even when it is not saved. `--cases id1,id2` selects a subset. The CLI prints the planned paid-call count before dispatch and starts only through this explicit command. It always calls the SDK's public `generateMusic` with both MIDI and audio, the compact pattern format, one structured model step and no tools, one attempt, and the same renderer and audio format for every model. A case's prompt and length settings are identical across models.
 
 Live evals are deliberately absent from `npm test` and `npm run check`. Those commands run only deterministic unit and data-handling tests.
 

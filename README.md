@@ -12,7 +12,22 @@ The package lets you choose a model, reasoning level, and length. It uses the Ve
 [![Apache-2.0 license](https://img.shields.io/npm/l/@jellypod/music-gen.svg)](https://github.com/Jellypod-Inc/music-gen/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Jellypod-Inc/music-gen.svg?style=flat)](https://github.com/Jellypod-Inc/music-gen/stargazers)
 
-## Listen
+## Listen: four models, one prompt
+
+Each model made one original 30-second piece with the same generation settings and provider-default reasoning. The prompt left the music entirely up to the model:
+
+> Create the best original instrumental music you can. Choose everything else yourself.
+
+| Model | Watch and listen | Tokens | Generation |
+| --- | --- | ---: | ---: |
+| Grok 4.3 | [Play 30-second video](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen@main/examples/showcase/grok-4.3.mp4) | 2,186 | 13.3s |
+| Claude Opus 5.5 | [Play 30-second video](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen@main/examples/showcase/opus-5.5.mp4) | 5,239 | 37.6s |
+| Gemini 3.8 Flash | [Play 30-second video](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen@main/examples/showcase/gemini-3.8-flash.mp4) | 5,584 | 18.7s |
+| GPT-6.1 Sol | [Play 30-second video](https://cdn.jsdelivr.net/gh/Jellypod-Inc/music-gen@main/examples/showcase/gpt-6.1-sol.mp4) | 5,533 | 51.5s |
+
+The videos use the same FluidSynth renderer and GeneralUser GS SoundFont; the SoundFont is not bundled. [Open the four-video gallery](examples/showcase/index.html) from a clone to compare them together. AI Gateway did not list Gemini 4, so this run uses Gemini 3.8 Flash. Grok 4.7 timed out; Grok 4.3 completed. These are individual takes, not a ranking.
+
+## Opus thinking comparison
 
 **Lanterns Over the Harbor** — two original 60-second takes from the same prompt and Claude Opus 5.5 via AI Gateway.
 
@@ -103,6 +118,6 @@ pnpm visualize --midi examples/audio/lanterns-over-the-harbor.mid
 
 The matching `.wav` and optional `.metadata.json` are found automatically. With no `--start` or `--duration`, the entire WAV is rendered. Add `--start 30 --duration 15` for an excerpt or `--aspect vertical` for a 9:16 video.
 
-The video shows the model as its heading, with thinking level and total tokens beneath it, followed by the prompt. Local logos cover Claude, GPT, Gemini, Qwen, and Kimi models; other model IDs get a neutral mark. The matching metadata file supplies these details automatically. For other outputs, pass `--metadata path/to/result.json` with the prompt and the SDK's `metadata` object, or use `--prompt`, `--model`, `--thinking`, `--input-tokens`, and `--output-tokens` directly.
+The video shows the model as its heading, with thinking level and total tokens beneath it, followed by the prompt. Local logos cover Claude, GPT, Gemini, Grok, Qwen, and Kimi models; other model IDs get a neutral mark. The matching metadata file supplies these details automatically. For other outputs, pass `--metadata path/to/result.json` with the prompt and the SDK's `metadata` object, or use `--prompt`, `--model`, `--thinking`, `--input-tokens`, and `--output-tokens` directly.
 
 `--project-only` writes the editable HyperFrames composition without rendering. Video generation requires Node 22+ and FFmpeg; the command runs a pinned HyperFrames CLI with `npx` on demand. The visualizer is development tooling and is not included in the npm package.

@@ -27,13 +27,13 @@ function parseArgs(argv) {
     else if (arg === '--reasoning') options.reasoning = argv[++i];
     else if (arg === '--dry-run') options.dryRun = true;
     else if (arg === '--save-trace') options.saveTrace = true;
-    else if (arg === '--help' || arg === '-h') { console.log('Usage: pnpm eval:music --models id1,id2 [--suite v1|v2] [--samples 3] [--cases case1,case2] [--concurrency 2] [--reasoning high] [--save-trace] [--dry-run]'); process.exit(0); }
+    else if (arg === '--help' || arg === '-h') { console.log('Usage: pnpm eval:music --models id1,id2 [--suite v1|v2|v3] [--samples 3] [--cases case1,case2] [--concurrency 2] [--reasoning high] [--save-trace] [--dry-run]'); process.exit(0); }
     else throw new Error(`unknown argument: ${arg}`);
   }
   if (!options.models.length || new Set(options.models).size !== options.models.length) throw new Error('provide unique --models IDs');
   if (!Number.isInteger(options.samples) || options.samples < 1 || options.samples > 20) throw new Error('--samples must be 1–20');
   if (!Number.isInteger(options.concurrency) || options.concurrency < 1 || options.concurrency > 4) throw new Error('--concurrency must be 1–4');
-  if (![1, 2].includes(options.suiteVersion)) throw new Error('--suite must be v1 or v2');
+  if (![1, 2, 3].includes(options.suiteVersion)) throw new Error('--suite must be v1, v2, or v3');
   if (options.reasoning && !['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh'].includes(options.reasoning)) throw new Error('invalid --reasoning level');
   return options;
 }
