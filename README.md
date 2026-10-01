@@ -15,6 +15,7 @@ Prompt used for this run:
 | This run | Result |
 | --- | ---: |
 | Model | Claude Opus 5.5 via AI Gateway |
+| Thinking level | Extra high (`xhigh`) |
 | Audio | 60 seconds, 8 tracks, 675 notes |
 | Input tokens | 1,688 |
 | Output tokens | 26,241, including 22,189 thinking tokens |
